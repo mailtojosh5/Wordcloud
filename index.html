@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WordCloud Studio</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/stlite@latest/stlite.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #04050a;
+    }
+  </style>
+</head>
+
+<body>
+<script>
+stlite.mount({
+  entrypoint: "app.py",
+
+  files: {
+    "app.py": `
+import streamlit as st
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import io
+import re
+from collections import Counter
+
+st.set_page_config(
+    page_title="WordCloud Studio",
+    page_icon="☁️",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
+
+st.markdown("""
+<style>
+body { background:#04050a; color:white; }
+.stApp { background:#04050a; }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("☁ WordCloud Studio")
+
+uploaded_file = st.file_uploader("Upload TXT file", type=["txt"])
+
+STOP_WORDS = {"the","a","and","or","in","on","to","of","is","it","this","that"}
+
+if uploaded_file:
+    text = uploaded_file.read().decode("utf-8", errors="ignore")
+
+    words = re.findall(r"[a-zA-Z]{3,}", text.lower())
+    words = [w for w in words if w not in STOP_WORDS]
+
+    freq = Counter(words)
+
+    wc = WordCloud(
+        width=1000,
+        height=500,
+        background_color="#04050a",
+        colormap="plasma"
+    ).generate_from_frequencies(freq)
+
+    fig, ax = plt.subplots()
+    ax.imshow(wc, interpolation="bilinear")
+    ax.axis("off")
+
+    st.pyplot(fig)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+
+    st.download_button(
+        "Download WordCloud",
+        data=buf,
+        file_name="wordcloud.png",
+        mime="image/png"
+    )
+`
+  }
+});
+</script>
+</body>
+</html>
