@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NETSCAN // Port Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #050810;
+  --bg2:      #0b0f1e;
+  --bg3:      #111827;
+  --line:     rgba(99,210,255,0.12);
+  --accent:   #63d2ff;
+  --accent2:  #00ff9d;
+  --accent3:  #ff4d6d;
+  --warn:     #ffd166;
+  --text:     #e2f0ff;
+  --muted:    rgba(226,240,255,0.35);
+  --open:     #00ff9d;
+  --closed:   #ff4d6d;
+  --filter:   #ffd166;
+  --font-ui:  'Syne', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,210,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,210,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scan line effect */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanLine 5s linear infinite;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 100;
+}
+@keyframes scanLine {
+  0%   { top: 0; opacity: 0.5; }
+  98%  { opacity: 0.5; }
+  100% { top: 100vh; opacity: 0; }
+}
+
+/* Radial glow */
+.bg-glow {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(120px);
+  z-index: 0;
+}
+.glow1 { width:500px;height:500px;background:rgba(99,210,255,0.06);top:-150px;left:-150px; }
+.glow2 { width:400px;height:400px;background:rgba(0,255,157,0.05);bottom:-100px;right:-100px; }
+
+/* Layout */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.logo {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+.logo span { color: rgba(99,210,255,0.4); font-weight: 400; }
+.header-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--muted); letter-spacing: 1px;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent2);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* Title section */
+.hero {
+  margin-bottom: 40px;
+}
+.hero-tag {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+.hero-title {
+  font-family: var(--font-ui);
+  font-size: clamp(32px, 6vw, 54px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -2px;
+  margin-bottom: 10px;
+}
+.hero-title .hi { color: var(--accent); }
+.hero-sub {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 480px;
+  line-height: 1.7;
+}
+
+/* Input panel */
+.input-panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.input-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  opacity: 0.5;
+}
+
+.fields-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+@media(max-width:640px){ .fields-row { grid-template-columns: 1fr; } }
+
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.7;
+}
+.field-input {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(99,210,255,0.15);
+  border-radius: 9px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  width: 100%;
+}
+.field-input:focus {
+  border-color: rgba(99,210,255,0.5);
+  box-shadow: 0 0 0 3px rgba(99,210,255,0.07);
+}
+.field-input::placeholder { color: rgba(226,240,255,0.2); }
+
+.preset-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(99,210,255,0.15);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(99,210,255,0.04);
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(99,210,255,0.08); }
+
+/* Scan options */
+.options-row {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-group { display: flex; gap: 12px; }
+.toggle-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--muted); }
+.toggle-item input[type=checkbox] { display: none; }
+.toggle-box {
+  width: 14px; height: 14px;
+  border: 1px solid rgba(99,210,255,0.3);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.toggle-item input:checked + .toggle-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle-item input:checked + .toggle-box::after { content:'✓'; font-size: 9px; color: #000; font-weight: 700; }
+
+/* Scan button */
+.scan-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 10px;
+  color: #050810;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 11px 28px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.scan-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.2);
+  transform: translateX(-100%);
+  transition: transform 0.35s ease;
+}
+.scan-btn:hover::after { transform: translateX(0); }
+.scan-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,210,255,0.3); }
+.scan-btn:active { transform: translateY(0); }
+.scan-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Progress */
+.progress-bar {
+  height: 3px;
+  background: rgba(99,210,255,0.1);
+  border-radius: 3px;
+  margin-top: 20px;
+  overflow: hidden;
+  display: none;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  width: 0%;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* Summary cards */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s ease;
+}
+.summary-cards.show { opacity: 1; transform: translateY(0); }
+@media(max-width:500px){ .summary-cards { grid-template-columns: repeat(2,1fr); } }
+
+.summary-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.sc-open::before  { background: var(--open); }
+.sc-closed::before{ background: var(--closed); }
+.sc-filter::before{ background: var(--filter); }
+.sc-total::before { background: var(--accent); }
+
+.sc-num {
+  font-family: var(--font-ui);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sc-open  .sc-num { color: var(--open); }
+.sc-closed .sc-num { color: var(--closed); }
+.sc-filter .sc-num { color: var(--filter); }
+.sc-total  .sc-num { color: var(--accent); }
+.sc-lbl { font-size: 10px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+
+/* Results table */
+.results-panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  display: none;
+}
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(99,210,255,0.03);
+}
+.rh-left {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent);
+}
+.rh-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: blink 1.5s infinite; }
+.filter-tabs { display: flex; gap: 4px; }
+.ftab {
+  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer; color: var(--muted);
+  transition: all 0.2s;
+}
+.ftab:hover { color: var(--text); border-color: var(--line); }
+.ftab.active { color: var(--accent); border-color: rgba(99,210,255,0.3); background: rgba(99,210,255,0.07); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr {
+  border-bottom: 1px solid var(--line);
+  background: rgba(99,210,255,0.02);
+}
+thead th {
+  padding: 10px 24px;
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+tbody tr {
+  border-bottom: 1px solid rgba(99,210,255,0.05);
+  transition: background 0.15s;
+  animation: rowIn 0.3s ease both;
+}
+@keyframes rowIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+tbody tr:hover { background: rgba(99,210,255,0.04); }
+tbody td { padding: 11px 24px; vertical-align: middle; }
+
+.port-num { font-weight: 700; color: var(--text); font-size: 14px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 5px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.badge-open   { background: rgba(0,255,157,0.1); color: var(--open); border: 1px solid rgba(0,255,157,0.2); }
+.badge-closed { background: rgba(255,77,109,0.1); color: var(--closed); border: 1px solid rgba(255,77,109,0.2); }
+.badge-filter { background: rgba(255,209,102,0.1); color: var(--filter); border: 1px solid rgba(255,209,102,0.2); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.service-name { color: var(--accent); }
+.latency { color: var(--muted); font-size: 12px; }
+.proto { color: rgba(226,240,255,0.4); font-size: 11px; }
+
+/* Terminal log */
+.terminal {
+  margin-top: 24px;
+  background: #020408;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 12px;
+  color: rgba(99,210,255,0.6);
+  max-height: 160px;
+  overflow-y: auto;
+  display: none;
+  line-height: 1.8;
+}
+.terminal::-webkit-scrollbar { width: 4px; }
+.terminal::-webkit-scrollbar-thumb { background: rgba(99,210,255,0.2); border-radius: 4px; }
+.log-line { display: flex; gap: 12px; }
+.log-time { color: rgba(99,210,255,0.3); min-width: 70px; }
+.log-ok   { color: var(--accent2); }
+.log-err  { color: var(--closed); }
+.log-info { color: var(--accent); }
+.log-warn { color: var(--filter); }
+
+/* Footer */
+.footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: rgba(226,240,255,0.2);
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow glow1"></div>
+<div class="bg-glow glow2"></div>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">NET<span>/</span>SCAN</div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      SYSTEM ONLINE // v2.4.1
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-tag">// Network reconnaissance tool</div>
+    <h1 class="hero-title">Port<br><span class="hi">Scanner</span></h1>
+    <p class="hero-sub">Detect open, closed, and filtered ports on any host. Identify running services and potential vulnerabilities.</p>
+  </div>
+
+  <!-- Input -->
+  <div class="input-panel">
+    <div class="fields-row">
+      <div class="field-group">
+        <div class="field-label">Target host / IP</div>
+        <input class="field-input" id="host-input" type="text" placeholder="192.168.1.1 or example.com" value="192.168.1.1">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Port range</div>
+        <input class="field-input" id="port-input" type="text" placeholder="1-1024" value="1-1024" style="width:130px">
+      </div>
+      <div class="field-group">
+        <div class="field-label">&nbsp;</div>
+        <button class="scan-btn" id="scan-btn" onclick="startScan()">▶ SCAN</button>
+      </div>
+    </div>
+
+    <div class="preset-chips">
+      <span class="chip" onclick="setPreset('1-1024')">Common (1–1024)</span>
+      <span class="chip" onclick="setPreset('1-65535')">Full (1–65535)</span>
+      <span class="chip" onclick="setPreset('80,443,8080,8443,3000,5000')">Web</span>
+      <span class="chip" onclick="setPreset('3306,5432,1433,27017,6379')">Database</span>
+      <span class="chip" onclick="setPreset('20,21,22,23,25,53,110,143')">Classic</span>
+      <span class="chip" onclick="setPreset('445,139,135,137,138')">SMB/NetBIOS</span>
+    </div>
+
+    <div class="options-row">
+      <div class="toggle-group">
+        <label class="toggle-item">
+          <input type="checkbox" id="opt-service" checked>
+          <div class="toggle-box"></div>
+          Service detection
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="opt-udp">
+          <div class="toggle-box"></div>
+          Include UDP
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="opt-verbose" checked>
+          <div class="toggle-box"></div>
+          Verbose log
+        </label>
+      </div>
+    </div>
+
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-cards" id="summary-cards">
+    <div class="summary-card sc-open">
+      <div class="sc-num" id="cnt-open">0</div>
+      <div class="sc-lbl">Open</div>
+    </div>
+    <div class="summary-card sc-closed">
+      <div class="sc-num" id="cnt-closed">0</div>
+      <div class="sc-lbl">Closed</div>
+    </div>
+    <div class="summary-card sc-filter">
+      <div class="sc-num" id="cnt-filter">0</div>
+      <div class="sc-lbl">Filtered</div>
+    </div>
+    <div class="summary-card sc-total">
+      <div class="sc-num" id="cnt-total">0</div>
+      <div class="sc-lbl">Scanned</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-panel" id="results-panel">
+    <div class="results-header">
+      <div class="rh-left">
+        <div class="rh-dot"></div>
+        SCAN RESULTS
+      </div>
+      <div class="filter-tabs">
+        <div class="ftab active" onclick="filterTable('all',this)">All</div>
+        <div class="ftab" onclick="filterTable('open',this)">Open</div>
+        <div class="ftab" onclick="filterTable('closed',this)">Closed</div>
+        <div class="ftab" onclick="filterTable('filtered',this)">Filtered</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Port</th>
+            <th>Protocol</th>
+            <th>State</th>
+            <th>Service</th>
+            <th>Latency</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal" id="terminal"></div>
+
+  <div class="footer">
+    <span>NETSCAN // For authorized testing only</span>
+    <span id="scan-time-label"></span>
+  </div>
+
+</div>
+
+<script>
+const SERVICES = {
+  21:   {name:'FTP',        desc:'File Transfer Protocol'},
+  22:   {name:'SSH',        desc:'Secure Shell remote access'},
+  23:   {name:'Telnet',     desc:'Unencrypted remote access'},
+  25:   {name:'SMTP',       desc:'Simple Mail Transfer Protocol'},
+  53:   {name:'DNS',        desc:'Domain Name System'},
+  80:   {name:'HTTP',       desc:'Web server (unencrypted)'},
+  110:  {name:'POP3',       desc:'Post Office Protocol v3'},
+  135:  {name:'RPC',        desc:'Microsoft Remote Procedure Call'},
+  137:  {name:'NetBIOS-NS', desc:'NetBIOS Name Service'},
+  138:  {name:'NetBIOS-DGM',desc:'NetBIOS Datagram Service'},
+  139:  {name:'NetBIOS-SSN',desc:'NetBIOS Session Service'},
+  143:  {name:'IMAP',       desc:'Internet Message Access Protocol'},
+  443:  {name:'HTTPS',      desc:'Secure web server (TLS)'},
+  445:  {name:'SMB',        desc:'Server Message Block (file sharing)'},
+  587:  {name:'SMTP/TLS',   desc:'Authenticated mail submission'},
+  993:  {name:'IMAPS',      desc:'Secure IMAP (TLS)'},
+  995:  {name:'POP3S',      desc:'Secure POP3 (TLS)'},
+  1433: {name:'MSSQL',      desc:'Microsoft SQL Server'},
+  1521: {name:'Oracle DB',  desc:'Oracle Database listener'},
+  3000: {name:'Node.js',    desc:'Common dev server port'},
+  3306: {name:'MySQL',      desc:'MySQL database server'},
+  3389: {name:'RDP',        desc:'Remote Desktop Protocol'},
+  5000: {name:'Flask',      desc:'Common Python dev server'},
+  5432: {name:'PostgreSQL', desc:'PostgreSQL database server'},
+  5900: {name:'VNC',        desc:'Virtual Network Computing'},
+  6379: {name:'Redis',      desc:'Redis in-memory data store'},
+  8080: {name:'HTTP-Alt',   desc:'Alternate HTTP port'},
+  8443: {name:'HTTPS-Alt',  desc:'Alternate HTTPS port'},
+  9200: {name:'Elasticsearch',desc:'Elasticsearch REST API'},
+  27017:{name:'MongoDB',    desc:'MongoDB database server'},
+};
+
+// Well-known ports likely to be "open" in simulation
+const WELL_KNOWN_OPEN = new Set([80,443,22,25,53,3306,5432,8080]);
+const WELL_KNOWN_FILTER = new Set([23,135,137,138,139,445,3389]);
+
+let scanInterval = null;
+let currentFilter = 'all';
+let allResults = [];
+
+function setPreset(val){ document.getElementById('port-input').value = val; }
+
+function parsePorts(str) {
+  const ports = new Set();
+  str.split(',').forEach(part => {
+    part = part.trim();
+    if(part.includes('-')) {
+      let [a,b] = part.split('-').map(Number);
+      if(b-a > 2000) b = a + 2000; // cap simulation
+      for(let i=a;i<=b;i++) ports.add(i);
+    } else if(!isNaN(parseInt(part))) {
+      ports.add(parseInt(part));
+    }
+  });
+  return [...ports].sort((a,b)=>a-b);
+}
+
+function randomLatency() { return (Math.random()*120+1).toFixed(1)+'ms'; }
+
+function simulateState(port) {
+  if(WELL_KNOWN_OPEN.has(port)) return Math.random()<0.85?'open':'closed';
+  if(WELL_KNOWN_FILTER.has(port)) return Math.random()<0.6?'filtered':'closed';
+  const r = Math.random();
+  if(r < 0.08) return 'open';
+  if(r < 0.18) return 'filtered';
+  return 'closed';
+}
+
+function logLine(type, msg) {
+  const term = document.getElementById('terminal');
+  if(!document.getElementById('opt-verbose').checked) return;
+  const now = new Date();
+  const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `<span class="log-time">[${t}]</span><span class="log-${type}">${msg}</span>`;
+  term.appendChild(div);
+  term.scrollTop = term.scrollHeight;
+}
+
+function renderRow(r, delay=0) {
+  const svc = SERVICES[r.port];
+  const statusClass = {open:'badge-open',closed:'badge-closed',filtered:'badge-filter'}[r.state];
+  const tr = document.createElement('tr');
+  tr.dataset.state = r.state;
+  tr.style.animationDelay = delay+'ms';
+  tr.innerHTML = `
+    <td><span class="port-num">${r.port}</span></td>
+    <td><span class="proto">TCP</span></td>
+    <td><span class="badge ${statusClass}"><span class="badge-dot"></span>${r.state.toUpperCase()}</span></td>
+    <td><span class="service-name">${svc?svc.name:'unknown'}</span></td>
+    <td><span class="latency">${r.latency}</span></td>
+    <td style="color:var(--muted);font-size:12px">${svc?svc.desc:'—'}</td>
+  `;
+  if(currentFilter !== 'all' && r.state !== currentFilter) tr.style.display='none';
+  return tr;
+}
+
+function filterTable(state, el) {
+  currentFilter = state;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#results-body tr').forEach(tr=>{
+    tr.style.display = (state==='all'||tr.dataset.state===state) ? '' : 'none';
+  });
+}
+
+function startScan() {
+  if(scanInterval) { clearInterval(scanInterval); scanInterval=null; }
+  const host = document.getElementById('host-input').value.trim()||'192.168.1.1';
+  const portStr = document.getElementById('port-input').value.trim()||'1-1024';
+  const ports = parsePorts(portStr);
+  if(!ports.length) { alert('No valid ports specified.'); return; }
+
+  // Reset
+  allResults = [];
+  const tbody = document.getElementById('results-body');
+  tbody.innerHTML = '';
+  document.getElementById('cnt-open').textContent='0';
+  document.getElementById('cnt-closed').textContent='0';
+  document.getElementById('cnt-filter').textContent='0';
+  document.getElementById('cnt-total').textContent='0';
+
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ SCANNING...';
+
+  document.getElementById('progress-bar').style.display='block';
+  document.getElementById('results-panel').style.display='block';
+  document.getElementById('terminal').style.display='block';
+  document.getElementById('summary-cards').classList.add('show');
+  document.getElementById('terminal').innerHTML='';
+  document.getElementById('scan-time-label').textContent='';
+
+  logLine('info', `Starting TCP scan on ${host} — ${ports.length} ports`);
+  logLine('info', `Scan profile: service detection=${document.getElementById('opt-service').checked?'ON':'OFF'}`);
+
+  const startTime = Date.now();
+  let idx = 0;
+  let openCount=0, closedCount=0, filterCount=0;
+
+  // Batch scan for speed
+  const batchSize = Math.max(1, Math.floor(ports.length/80));
+  const totalBatches = Math.ceil(ports.length/batchSize);
+  let batchIdx = 0;
+
+  scanInterval = setInterval(()=>{
+    const batch = ports.slice(idx, idx+batchSize);
+    batch.forEach(port => {
+      const state = simulateState(port);
+      const latency = state==='closed' ? (Math.random()*5+0.5).toFixed(1)+'ms' : randomLatency();
+      const result = {port, state, latency};
+      allResults.push(result);
+
+      if(state==='open') openCount++;
+      else if(state==='filtered') filterCount++;
+      else closedCount++;
+
+      // Only add to table if not closed (or show all)
+      if(state !== 'closed' || ports.length <= 100) {
+        tbody.appendChild(renderRow(result, 0));
+      }
+
+      if(state==='open') logLine('ok', `Port ${port}/tcp OPEN — ${SERVICES[port]?SERVICES[port].name:'unknown'} (${latency})`);
+      else if(state==='filtered') logLine('warn', `Port ${port}/tcp FILTERED — no response`);
+    });
+
+    idx += batchSize;
+    batchIdx++;
+    const progress = Math.min(100, (batchIdx/totalBatches)*100);
+    document.getElementById('progress-fill').style.width = progress+'%';
+
+    document.getElementById('cnt-open').textContent = openCount;
+    document.getElementById('cnt-closed').textContent = closedCount;
+    document.getElementById('cnt-filter').textContent = filterCount;
+    document.getElementById('cnt-total').textContent = openCount+closedCount+filterCount;
+
+    if(idx >= ports.length) {
+      clearInterval(scanInterval);
+      scanInterval = null;
+      const elapsed = ((Date.now()-startTime)/1000).toFixed(2);
+      logLine('info', `Scan complete. ${ports.length} ports scanned in ${elapsed}s`);
+      logLine('ok', `${openCount} open • ${filterCount} filtered • ${closedCount} closed`);
+      btn.disabled = false;
+      btn.textContent = '▶ SCAN';
+      document.getElementById('scan-time-label').textContent = `Scanned ${ports.length} ports in ${elapsed}s`;
+    }
+  }, 60);
+}
+
+// Auto-demo on load
+window.addEventListener('load', ()=> setTimeout(startScan, 600));
+</script>
+</body>
+</html>
