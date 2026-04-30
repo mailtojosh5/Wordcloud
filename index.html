@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>WordCloud Studio</title>
+  <link href="https://cdn.jsdelivr.net/npm/@stlite/browser@0.85.1/build/stlite.css" rel="stylesheet">
 </head>
 
 <body style="margin:0;background:#04050a">
@@ -10,12 +11,12 @@
 <div id="app"></div>
 
 <script type="module">
-import * as stlite from "https://unpkg.com/stlite@0.62.0/build/stlite.js";
+import * as stlite from "https://cdn.jsdelivr.net/npm/@stlite/browser@0.85.1/build/stlite.module.js";
 
 stlite.mount({
   node: document.getElementById("app"),
   entrypoint: "app.py",
-  requirements: ["wordcloud", "matplotlib"], // Added wordcloud and matplotlib dependencies
+  requirements: ["numpy", "pillow", "matplotlib", "wordcloud"],
   files: {
     "app.py": `
 import streamlit as st
@@ -32,20 +33,23 @@ if file:
     text = file.read().decode("utf-8", errors="ignore")
     words = re.findall(r"[a-zA-Z]{3,}", text.lower())
 
-    freq = Counter(words)
+    if not words:
+        st.warning("No words found in the file. Please upload a file with English text.")
+    else:
+        freq = Counter(words)
 
-    wc = WordCloud(
-        width=900,
-        height=400,
-        background_color="#04050a",
-        colormap="plasma"
-    ).generate_from_frequencies(freq)
+        wc = WordCloud(
+            width=900,
+            height=400,
+            background_color="#04050a",
+            colormap="plasma"
+        ).generate_from_frequencies(freq)
 
-    fig, ax = plt.subplots()
-    ax.imshow(wc)
-    ax.axis("off")
+        fig, ax = plt.subplots()
+        ax.imshow(wc)
+        ax.axis("off")
 
-    st.pyplot(fig)
+        st.pyplot(fig)
 `
   }
 });
