@@ -3,48 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <title>WordCloud Studio</title>
-
-  <!-- IMPORTANT: use pinned version (not latest) -->
-  <script src="https://cdn.jsdelivr.net/npm/stlite@0.62.0/build/stlite.js"></script>
-
-  <style>
-    body { margin:0; background:#04050a; }
-  </style>
 </head>
 
-<body>
+<body style="margin:0;background:#04050a">
 
 <div id="app"></div>
 
-<script>
-window.addEventListener("load", () => {
-  if (!window.stlite) {
-    document.body.innerHTML = "<h2 style='color:white'>stlite failed to load</h2>";
-    return;
-  }
+<script type="module">
+import * as stlite from "https://unpkg.com/stlite@0.62.0/build/stlite.js";
 
-  stlite.mount({
-    node: document.getElementById("app"),
-    entrypoint: "app.py",
-    files: {
-      "app.py": `
+stlite.mount({
+  node: document.getElementById("app"),
+  entrypoint: "app.py",
+  files: {
+    "app.py": `
 import streamlit as st
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import re
 from collections import Counter
-import io
 
 st.title("☁ WordCloud Studio")
 
 file = st.file_uploader("Upload TXT", type=["txt"])
 
-STOP = {"the","and","is","in","to","a","of"}
-
 if file:
     text = file.read().decode("utf-8", errors="ignore")
     words = re.findall(r"[a-zA-Z]{3,}", text.lower())
-    words = [w for w in words if w not in STOP]
 
     freq = Counter(words)
 
@@ -61,8 +46,7 @@ if file:
 
     st.pyplot(fig)
 `
-    }
-  });
+  }
 });
 </script>
 
