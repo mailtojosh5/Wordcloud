@@ -3,10 +3,101 @@
 <head>
   <meta charset="utf-8" />
   <title>WordCloud Studio</title>
+  
   <link href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.75.0/build/stlite.min.css" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0a0c16 0%, #121829 100%);
+      --accent-color: #7209b7;
+      --glow-color: rgba(114, 9, 183, 0.4);
+      --text-main: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-gradient);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    /* Animated background gradient effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 80% 20%, rgba(114, 9, 183, 0.15) 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, rgba(67, 97, 238, 0.15) 0%, transparent 40%);
+      z-index: 0;
+      pointer-events: none;
+      animation: ambientShift 15s ease infinite alternate;
+    }
+
+    @keyframes ambientShift {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(2%) scale(1.05); }
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    /* Streamlit Customizations inside stlite */
+    .stApp {
+      background: transparent !important;
+    }
+
+    h1 {
+      color: var(--text-main);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      animation: fadeInDown 1s ease-out;
+      text-align: center;
+      margin-bottom: 2rem !important;
+      background: linear-gradient(90deg, #ffffff, #b5179e, #7209b7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Animated Elements */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Stlite Container Styling */
+    .stFileUploader {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border: 1px dashed rgba(255, 255, 255, 0.2) !important;
+      border-radius: 16px !important;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease !important;
+    }
+    
+    .stFileUploader:hover {
+      border-color: var(--accent-color) !important;
+      box-shadow: 0 0 20px var(--glow-color);
+    }
+  </style>
 </head>
 
-<body style="margin:0;background:#04050a">
+<body>
 
 <div id="app"></div>
 
@@ -24,9 +115,14 @@ import matplotlib.pyplot as plt
 import re
 from collections import Counter
 
-st.title("☁ WordCloud Studio")
+# Setting page layout
+st.set_page_config(page_title="WordCloud Studio", layout="centered")
 
-file = st.file_uploader("Upload TXT", type=["txt"])
+st.markdown("<h1>☁ WordCloud Studio</h1>", unsafe_allow_html=True)
+
+# Using st.container for a card effect
+with st.container():
+    file = st.file_uploader("Upload TXT File", type=["txt"])
 
 if file:
     text = file.read().decode("utf-8", errors="ignore")
@@ -37,18 +133,27 @@ if file:
     else:
         freq = Counter(words)
 
-        wc = WordCloud(
-            width=900,
-            height=400,
-            background_color="#04050a",
-            colormap="plasma"
-        ).generate_from_frequencies(freq)
+        with st.spinner("Generating beautiful word cloud..."):
+            wc = WordCloud(
+                width=900,
+                height=450,
+                background_color="#0d0e15",
+                colormap="plasma",
+                contour_width=2,
+                contour_color='#7209b7',
+                collocations=False
+            ).generate_from_frequencies(freq)
 
-        fig, ax = plt.subplots()
-        ax.imshow(wc)
-        ax.axis("off")
+            fig, ax = plt.subplots(figsize=(10, 5))
+            
+            # Apply styling to make the chart background match the page
+            fig.patch.set_facecolor('#0d0e15')
+            ax.set_facecolor('#0d0e15')
+            
+            ax.imshow(wc, interpolation='bilinear')
+            ax.axis("off")
 
-        st.pyplot(fig)
+            st.pyplot(fig, use_container_width=True)
     `
   }
 });
