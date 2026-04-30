@@ -1,0 +1,730 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #wcs-root {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0a0718 0%, #12092b 50%, #070d2a 100%);
+    min-height: 100vh;
+    color: #fff;
+    padding: 0 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Stars */
+  .stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+    animation: twinkle var(--dur) ease-in-out infinite alternate;
+    opacity: 0;
+  }
+  @keyframes twinkle {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: var(--op); transform: scale(1.2); }
+  }
+
+  /* Orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat 18s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 400px; height: 400px; background: radial-gradient(circle, #7c3aed55, transparent); top: -100px; left: -100px; }
+  .orb2 { width: 350px; height: 350px; background: radial-gradient(circle, #06b6d455, transparent); bottom: 0; right: -80px; animation-delay: -7s; }
+  .orb3 { width: 250px; height: 250px; background: radial-gradient(circle, #ec489944, transparent); top: 40%; left: 40%; animation-delay: -12s; }
+  @keyframes orbFloat {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(30px, 30px) scale(1.15); }
+  }
+
+  /* Content */
+  .wcs-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* Hero header */
+  .wcs-header {
+    text-align: center;
+    padding: 52px 0 40px;
+  }
+  .wcs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(124,58,237,0.18);
+    border: 1px solid rgba(124,58,237,0.35);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #a78bfa;
+    margin-bottom: 20px;
+    animation: fadeSlideDown 0.6s ease both;
+  }
+  .wcs-badge-dot {
+    width: 7px; height: 7px;
+    background: #a78bfa;
+    border-radius: 50%;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+  .wcs-title {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    animation: fadeSlideDown 0.7s 0.1s ease both;
+  }
+  .wcs-title-grad {
+    background: linear-gradient(90deg, #c084fc, #818cf8, #22d3ee);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% auto;
+    animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .wcs-subtitle {
+    font-size: 15px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 12px;
+    font-weight: 300;
+    animation: fadeSlideDown 0.8s 0.2s ease both;
+  }
+
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    position: relative;
+    border: 1.5px dashed rgba(167,139,250,0.3);
+    border-radius: 20px;
+    padding: 44px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: rgba(255,255,255,0.025);
+    transition: all 0.35s ease;
+    animation: fadeSlideDown 0.9s 0.3s ease both;
+  }
+  .upload-zone:hover, .upload-zone.drag {
+    border-color: rgba(167,139,250,0.7);
+    background: rgba(124,58,237,0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 0 50px rgba(124,58,237,0.15);
+  }
+  .upload-zone input { display: none; }
+
+  .upload-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(34,211,238,0.15));
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 26px;
+    transition: transform 0.3s ease;
+  }
+  .upload-zone:hover .upload-icon { transform: scale(1.08) rotate(4deg); }
+
+  .upload-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 6px;
+  }
+  .upload-hint { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+  /* Filename chip */
+  .file-chip {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #c084fc;
+    margin: 12px auto 0;
+    width: fit-content;
+    animation: popIn 0.3s ease both;
+  }
+  .file-chip.show { display: flex; }
+  @keyframes popIn { from{opacity:0;transform:scale(0.88)} to{opacity:1;transform:scale(1)} }
+
+  /* Controls */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+    animation: fadeSlideDown 1.0s 0.4s ease both;
+  }
+  .control-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .control-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 10px;
+  }
+  .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .swatch {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active { border-color: #fff; transform: scale(1.15); }
+
+  .shape-btns { display: flex; gap: 8px; }
+  .shape-btn {
+    flex: 1; padding: 7px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    color: rgba(255,255,255,0.55);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+  .shape-btn:hover { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.4); color: #fff; }
+  .shape-btn.active { background: rgba(124,58,237,0.3); border-color: rgba(124,58,237,0.6); color: #fff; }
+
+  .slider-wrap { display: flex; align-items: center; gap: 10px; }
+  .wcs-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.12);
+    outline: none;
+  }
+  .wcs-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a78bfa, #22d3ee);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(167,139,250,0.5);
+    transition: transform 0.2s;
+  }
+  .wcs-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .slider-val { font-size: 13px; font-weight: 600; color: #a78bfa; min-width: 28px; text-align: right; }
+
+  .stop-words-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+    padding: 7px 10px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .stop-words-input:focus { border-color: rgba(167,139,250,0.5); }
+  .stop-words-input::placeholder { color: rgba(255,255,255,0.2); }
+
+  /* Generate button */
+  .gen-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #fff;
+    background: linear-gradient(135deg, #7c3aed, #2563eb, #0891b2);
+    background-size: 200% auto;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.35s ease;
+    animation: fadeSlideDown 1.1s 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .gen-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .gen-btn:hover { background-position: right center; transform: translateY(-2px); box-shadow: 0 12px 40px rgba(124,58,237,0.4); }
+  .gen-btn:hover::before { opacity: 1; }
+  .gen-btn:active { transform: translateY(0); }
+  .gen-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Output area */
+  .output-area {
+    margin-top: 28px;
+    animation: fadeSlideDown 0.6s ease both;
+  }
+  .output-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+  }
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .output-header-left {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .output-dot { width: 7px; height: 7px; border-radius: 50%; background: #22d3ee; animation: pulse 2s infinite; }
+
+  .dl-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(34,211,238,0.1);
+    border: 1px solid rgba(34,211,238,0.25);
+    border-radius: 8px;
+    color: #22d3ee;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dl-btn:hover { background: rgba(34,211,238,0.2); transform: translateY(-1px); }
+
+  #cloud-canvas {
+    display: block;
+    width: 100%;
+    background: #07081a;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 1px;
+    background: rgba(255,255,255,0.07);
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .stat-item {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+  }
+  .stat-num { font-size: 18px; font-weight: 700; color: #a78bfa; }
+  .stat-lbl { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* Loading */
+  .loading-ring {
+    display: none;
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: #a78bfa;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 30px auto;
+  }
+  @keyframes spin { to{ transform: rotate(360deg); } }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: rgba(255,255,255,0.2);
+    font-size: 14px;
+  }
+  .empty-state-icon { font-size: 42px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* Animated word floating in empty state */
+  .float-words {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+  .fw {
+    position: absolute;
+    font-weight: 700;
+    opacity: 0;
+    animation: wordFloat var(--d) var(--delay) ease-in-out infinite;
+    color: var(--c);
+    pointer-events: none;
+  }
+  @keyframes wordFloat {
+    0% { opacity:0; transform: translateY(20px) scale(0.8); }
+    20% { opacity: var(--op); }
+    80% { opacity: var(--op); }
+    100% { opacity:0; transform: translateY(-30px) scale(1.05); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 4px; }
+</style>
+
+<div id="wcs-root">
+  <div class="stars" id="stars"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <div class="wcs-inner">
+    <div class="wcs-header">
+      <div class="wcs-badge"><div class="wcs-badge-dot"></div>Word Cloud Generator</div>
+      <div class="wcs-title"><span class="wcs-title-grad">WordCloud</span> Studio</div>
+      <div class="wcs-subtitle">Transform any text into a beautiful word cloud visualization</div>
+    </div>
+
+    <!-- Upload -->
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" accept=".txt">
+      <div class="upload-icon">☁</div>
+      <div class="upload-label">Drop your text file here</div>
+      <div class="upload-hint">or click to browse — .txt files only</div>
+    </div>
+    <div class="file-chip" id="file-chip">
+      <span>📄</span>
+      <span id="file-name-label">file.txt</span>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-grid">
+      <div class="control-card">
+        <div class="control-label">Color theme</div>
+        <div class="color-swatches" id="swatches">
+          <div class="swatch active" data-theme="cosmic" style="background:linear-gradient(135deg,#a855f7,#3b82f6,#06b6d4)" title="Cosmic"></div>
+          <div class="swatch" data-theme="fire" style="background:linear-gradient(135deg,#f59e0b,#ef4444,#ec4899)" title="Fire"></div>
+          <div class="swatch" data-theme="forest" style="background:linear-gradient(135deg,#22c55e,#10b981,#14b8a6)" title="Forest"></div>
+          <div class="swatch" data-theme="mono" style="background:linear-gradient(135deg,#e2e8f0,#94a3b8,#475569)" title="Mono"></div>
+          <div class="swatch" data-theme="gold" style="background:linear-gradient(135deg,#fbbf24,#f59e0b,#d97706)" title="Gold"></div>
+          <div class="swatch" data-theme="rose" style="background:linear-gradient(135deg,#fb7185,#f43f5e,#e11d48)" title="Rose"></div>
+        </div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Shape</div>
+        <div class="shape-btns">
+          <div class="shape-btn active" data-shape="rect" title="Rectangle">▭</div>
+          <div class="shape-btn" data-shape="circle" title="Circle">○</div>
+          <div class="shape-btn" data-shape="diamond" title="Diamond">◇</div>
+        </div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Max words</div>
+        <div class="slider-wrap">
+          <input type="range" min="20" max="200" value="80" step="10" class="wcs-slider" id="max-words">
+          <div class="slider-val" id="max-words-val">80</div>
+        </div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Exclude words</div>
+        <input class="stop-words-input" id="stop-words" placeholder="the, and, is, to…" value="the, and, is, to, of, a, in, it, that, was, he, she, for, on, are, with, as, at, be, this, by, from">
+      </div>
+    </div>
+
+    <button class="gen-btn" id="gen-btn" disabled>✦ Generate Word Cloud</button>
+
+    <!-- Output -->
+    <div class="output-area" id="output-area" style="display:none">
+      <div class="output-card">
+        <div class="output-header">
+          <div class="output-header-left">
+            <div class="output-dot"></div>
+            Live preview
+          </div>
+          <button class="dl-btn" id="dl-btn">↓ Download PNG</button>
+        </div>
+        <div class="loading-ring" id="loading-ring"></div>
+        <div class="float-words" id="float-words"></div>
+        <canvas id="cloud-canvas" width="700" height="380"></canvas>
+        <div class="stats-row" id="stats-row">
+          <div class="stat-item"><div class="stat-num" id="stat-words">0</div><div class="stat-lbl">Total words</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-unique">0</div><div class="stat-lbl">Unique words</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-top">—</div><div class="stat-lbl">Top word</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  // Stars
+  const starsEl = document.getElementById('stars');
+  for(let i=0;i<90;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random()*2.5+0.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${2+Math.random()*4}s;--op:${0.3+Math.random()*0.7};animation-delay:${Math.random()*5}s`;
+    starsEl.appendChild(s);
+  }
+
+  const themes = {
+    cosmic: ['#c084fc','#818cf8','#22d3ee','#a78bfa','#67e8f9','#8b5cf6','#38bdf8'],
+    fire:   ['#fbbf24','#f97316','#ef4444','#ec4899','#f59e0b','#fb923c','#e11d48'],
+    forest: ['#4ade80','#2dd4bf','#34d399','#10b981','#86efac','#5eead4','#a7f3d0'],
+    mono:   ['#f8fafc','#cbd5e1','#94a3b8','#64748b','#e2e8f0','#b0bdc8','#d1d5db'],
+    gold:   ['#fde68a','#fbbf24','#f59e0b','#d97706','#fef08a','#fcd34d','#ca8a04'],
+    rose:   ['#fda4af','#fb7185','#f43f5e','#e11d48','#fecdd3','#fd8a9b','#be123c']
+  };
+
+  let currentTheme = 'cosmic';
+  let currentShape = 'rect';
+  let fileText = '';
+  let wordFreq = {};
+
+  // Swatches
+  document.querySelectorAll('.swatch').forEach(s=>{
+    s.addEventListener('click',()=>{
+      document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active'));
+      s.classList.add('active');
+      currentTheme = s.dataset.theme;
+    });
+  });
+
+  // Shape btns
+  document.querySelectorAll('.shape-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.shape-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      currentShape = b.dataset.shape;
+    });
+  });
+
+  // Slider
+  const slider = document.getElementById('max-words');
+  const sliderVal = document.getElementById('max-words-val');
+  slider.addEventListener('input',()=>sliderVal.textContent=slider.value);
+
+  // Upload
+  const zone = document.getElementById('upload-zone');
+  const input = document.getElementById('file-input');
+  const chip = document.getElementById('file-chip');
+  const genBtn = document.getElementById('gen-btn');
+  const nameLabel = document.getElementById('file-name-label');
+
+  zone.addEventListener('click',()=>input.click());
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag');});
+  zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+  zone.addEventListener('drop',e=>{
+    e.preventDefault();zone.classList.remove('drag');
+    const f=e.dataTransfer.files[0];
+    if(f&&f.name.endsWith('.txt')) loadFile(f);
+  });
+  input.addEventListener('change',()=>{ if(input.files[0]) loadFile(input.files[0]); });
+
+  function loadFile(f){
+    nameLabel.textContent=f.name;
+    chip.classList.add('show');
+    const r=new FileReader();
+    r.onload=e=>{
+      fileText=e.target.result;
+      genBtn.disabled=false;
+    };
+    r.readAsText(f);
+  }
+
+  genBtn.addEventListener('click',generate);
+
+  function parseWords(){
+    const stops = new Set(document.getElementById('stop-words').value.split(',').map(w=>w.trim().toLowerCase()).filter(Boolean));
+    const words = fileText.match(/[a-zA-Z]{3,}/g)||[];
+    const freq={};
+    words.forEach(w=>{
+      const lw=w.toLowerCase();
+      if(!stops.has(lw)) freq[lw]=(freq[lw]||0)+1;
+    });
+    return {freq, total:words.length};
+  }
+
+  async function generate(){
+    const {freq, total} = parseWords();
+    wordFreq = freq;
+    const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+    const maxW = parseInt(slider.value);
+    const limited = sorted.slice(0,maxW);
+
+    // Stats
+    document.getElementById('stat-words').textContent = total.toLocaleString();
+    document.getElementById('stat-unique').textContent = sorted.length.toLocaleString();
+    document.getElementById('stat-top').textContent = limited[0]?limited[0][0]:'—';
+
+    // Show output
+    document.getElementById('output-area').style.display='block';
+    document.getElementById('loading-ring').style.display='block';
+    document.getElementById('cloud-canvas').style.display='none';
+
+    // Add floating words in background
+    setupFloatingWords(limited.slice(0,20));
+
+    await new Promise(r=>setTimeout(r,400));
+    drawCloud(limited);
+    document.getElementById('loading-ring').style.display='none';
+    document.getElementById('cloud-canvas').style.display='block';
+  }
+
+  function setupFloatingWords(words){
+    const fw = document.getElementById('float-words');
+    fw.innerHTML='';
+    const cols = themes[currentTheme];
+    words.forEach((w,i)=>{
+      const el=document.createElement('div');
+      el.className='fw';
+      el.textContent=w[0];
+      const fs=12+Math.random()*24;
+      el.style.cssText=`font-size:${fs}px;left:${Math.random()*90}%;top:${Math.random()*80+10}%;--c:${cols[i%cols.length]};--d:${4+Math.random()*6}s;--delay:${Math.random()*4}s;--op:${0.12+Math.random()*0.15}`;
+      fw.appendChild(el);
+    });
+  }
+
+  function drawCloud(pairs){
+    const canvas = document.getElementById('cloud-canvas');
+    const ctx = canvas.getContext('2d');
+    const W=canvas.width, H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    // Background
+    ctx.fillStyle='#07081a';
+    ctx.fillRect(0,0,W,H);
+
+    // Shape clip
+    ctx.save();
+    applyShapeClip(ctx, W, H);
+
+    const cols = themes[currentTheme];
+    const maxFreq = pairs[0][1];
+
+    // Simple spiral placement
+    const placed = [];
+    const cx=W/2, cy=H/2;
+    let angle=0, radius=0;
+
+    pairs.forEach(([word,freq],i)=>{
+      const size = Math.round(10 + (freq/maxFreq)*70);
+      ctx.font = `${700} ${size}px Inter, sans-serif`;
+      const metrics = ctx.measureText(word);
+      const tw = metrics.width;
+      const th = size;
+      const color = cols[i % cols.length];
+
+      // Spiral search
+      let placed_ok=false;
+      let a=angle, r=0;
+      for(let tries=0;tries<800;tries++){
+        const x = cx + r*Math.cos(a) - tw/2;
+        const y = cy + r*Math.sin(a) + th/3;
+        const box={x,y:y-th,w:tw+4,h:th+4};
+        if(x>6&&x+tw<W-6&&y-th>6&&y<H-6){
+          if(!placed.some(p=>rectsOverlap(box,p))){
+            ctx.fillStyle=color;
+            // subtle glow
+            ctx.shadowColor=color;
+            ctx.shadowBlur=size>40?16:8;
+            ctx.fillText(word,x,y);
+            ctx.shadowBlur=0;
+            placed.push(box);
+            placed_ok=true;
+            break;
+          }
+        }
+        a += 0.28;
+        r += 0.55;
+      }
+    });
+
+    ctx.restore();
+
+    // Subtle vignette
+    const vg=ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.72);
+    vg.addColorStop(0,'transparent');
+    vg.addColorStop(1,'rgba(7,8,26,0.65)');
+    ctx.fillStyle=vg;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  function applyShapeClip(ctx,W,H){
+    ctx.beginPath();
+    if(currentShape==='circle'){
+      ctx.arc(W/2,H/2,Math.min(W,H)*0.46,0,Math.PI*2);
+    } else if(currentShape==='diamond'){
+      ctx.moveTo(W/2,H*0.05);
+      ctx.lineTo(W*0.96,H/2);
+      ctx.lineTo(W/2,H*0.95);
+      ctx.lineTo(W*0.04,H/2);
+      ctx.closePath();
+    } else {
+      ctx.rect(0,0,W,H);
+    }
+    ctx.clip();
+  }
+
+  function rectsOverlap(a,b){
+    return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y);
+  }
+
+  // Download
+  document.getElementById('dl-btn').addEventListener('click',()=>{
+    const canvas=document.getElementById('cloud-canvas');
+    const link=document.createElement('a');
+    link.download='wordcloud.png';
+    link.href=canvas.toDataURL();
+    link.click();
+  });
+
+  // Demo: auto-generate with sample text if no file
+  genBtn.addEventListener('dblclick',()=>{
+    if(!fileText){
+      fileText="the quick brown fox jumps over the lazy dog language words beautiful creative imagination wonder dream vision inspiration writing literature poetry story adventure journey discovery exploration knowledge wisdom science technology innovation future present past memory imagination curiosity learning growth challenge opportunity success failure resilience creativity expression transformation evolution connection communication understanding empathy compassion courage strength hope";
+      nameLabel.textContent='sample.txt';
+      chip.classList.add('show');
+      genBtn.disabled=false;
+      generate();
+    }
+  });
+})();
+</script>
