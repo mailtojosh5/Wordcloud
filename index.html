@@ -3,16 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <title>WordCloud Studio</title>
-  <link href="https://cdn.jsdelivr.net/npm/@stlite/browser@0.85.1/build/stlite.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.75.0/build/stlite.min.css" rel="stylesheet">
 </head>
 
 <body style="margin:0;background:#04050a">
 
 <div id="app"></div>
 
-<script type="module">
-import * as stlite from "https://cdn.jsdelivr.net/npm/@stlite/browser@0.85.1/build/stlite.module.js";
-
+<script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.75.0/build/stlite.min.js"></script>
+<script>
 stlite.mount({
   node: document.getElementById("app"),
   entrypoint: "app.py",
@@ -50,7 +49,7 @@ if file:
         ax.axis("off")
 
         st.pyplot(fig)
-`
+    `
   }
 });
 </script>
