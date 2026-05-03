@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevOps Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --bg2: #0d1320;
+    --bg3: #111827;
+    --panel: #0f1929;
+    --panel2: #152035;
+    --border: rgba(99,179,237,0.12);
+    --border2: rgba(99,179,237,0.22);
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --accent3: #34d399;
+    --accent4: #fb923c;
+    --accent5: #f472b6;
+    --accent6: #facc15;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+    --glow: rgba(56,189,248,0.18);
+    --glow2: rgba(129,140,248,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated starfield BG */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 50%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(600px circle at 10% 30%, rgba(56,189,248,0.05) 0%, transparent 60%),
+      radial-gradient(800px circle at 90% 70%, rgba(129,140,248,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanning line animation */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(56,189,248,0.3), transparent);
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes scanline {
+    0% { top: -2px; opacity: 0; }
+    5% { opacity: 1; }
+    95% { opacity: 1; }
+    100% { top: 100vh; opacity: 0; }
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    background: rgba(8,12,20,0.85);
+    border-bottom: 1px solid var(--border2);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideDown 0.6s ease both;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px var(--glow);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px var(--glow); }
+    50% { box-shadow: 0 0 40px rgba(56,189,248,0.4); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-clock {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    background: rgba(56,189,248,0.08);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(56,189,248,0.2);
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--accent3);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent3);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── MAIN ── */
+  main {
+    position: relative;
+    z-index: 2;
+    padding: 40px 32px 60px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* ── PAGE TITLE ── */
+  .page-title {
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  @keyframes fadeUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .page-title h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(90deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .page-title p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── SECTIONS GRID ── */
+  .sections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+  }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  .section-card:hover {
+    border-color: var(--border2);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,179,237,0.08);
+    transform: translateY(-3px);
+  }
+
+  /* stagger animation delays */
+  .section-card:nth-child(1) { animation-delay: 0.1s; }
+  .section-card:nth-child(2) { animation-delay: 0.18s; }
+  .section-card:nth-child(3) { animation-delay: 0.26s; }
+  .section-card:nth-child(4) { animation-delay: 0.34s; }
+  .section-card:nth-child(5) { animation-delay: 0.42s; }
+  .section-card:nth-child(6) { animation-delay: 0.5s; }
+  .section-card:nth-child(7) { animation-delay: 0.58s; }
+  .section-card:nth-child(8) { animation-delay: 0.66s; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--section-color, var(--accent)), transparent);
+    opacity: 0.4;
+  }
+
+  .section-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--section-color, var(--accent)) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--section-color, var(--accent)) 30%, transparent);
+  }
+
+  .section-meta { flex: 1; min-width: 0; }
+
+  .section-meta h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .section-meta span {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .item-count {
+    font-size: 0.68rem;
+    background: color-mix(in srgb, var(--section-color, var(--accent)) 12%, transparent);
+    color: var(--section-color, var(--accent));
+    border: 1px solid color-mix(in srgb, var(--section-color, var(--accent)) 25%, transparent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  /* ── APPS LIST (scrollable) ── */
+  .apps-list {
+    padding: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99,179,237,0.2) transparent;
+  }
+
+  .apps-list::-webkit-scrollbar { width: 4px; }
+  .apps-list::-webkit-scrollbar-track { background: transparent; }
+  .apps-list::-webkit-scrollbar-thumb { background: rgba(99,179,237,0.2); border-radius: 4px; }
+  .apps-list::-webkit-scrollbar-thumb:hover { background: rgba(99,179,237,0.4); }
+
+  /* ── APP ITEM ── */
+  .app-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .app-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--section-color, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .app-item:hover {
+    background: color-mix(in srgb, var(--section-color, var(--accent)) 8%, transparent);
+    border-color: color-mix(in srgb, var(--section-color, var(--accent)) 18%, transparent);
+    transform: translateX(4px);
+  }
+
+  .app-item:hover::before { opacity: 1; }
+
+  .app-item:active { transform: translateX(4px) scale(0.98); }
+
+  .app-emoji {
+    font-size: 16px;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  .app-item:hover .app-emoji { transform: scale(1.15) rotate(-5deg); }
+
+  .app-info { flex: 1; min-width: 0; }
+
+  .app-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  .app-desc {
+    font-size: 0.67rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-arrow {
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .app-item:hover .app-arrow { opacity: 1; transform: translateX(3px); }
+
+  /* ── DELETE BUTTON ── */
+  .app-delete {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    flex-shrink: 0;
+    transition: opacity 0.2s, background 0.2s, color 0.2s, transform 0.15s;
+    padding: 0;
+  }
+
+  .app-item:hover .app-delete {
+    opacity: 1;
+  }
+
+  .app-delete:hover {
+    background: rgba(248,113,113,0.18);
+    color: #f87171;
+    transform: scale(1.15);
+  }
+
+  .app-delete:active { transform: scale(0.9); }
+
+  /* ── ADD ITEM BUTTON ── */
+  .add-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px dashed rgba(99,179,237,0.15);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    width: 100%;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+
+  .add-item:hover {
+    border-color: rgba(99,179,237,0.35);
+    color: var(--accent);
+    background: rgba(56,189,248,0.05);
+  }
+
+  /* ── SECTION FOOTER ── */
+  .section-footer {
+    padding: 10px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .open-all-btn {
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--section-color, var(--accent));
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+
+  .open-all-btn:hover {
+    background: color-mix(in srgb, var(--section-color, var(--accent)) 10%, transparent);
+  }
+
+  /* ── MODAL for editing ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 32px;
+    width: 460px;
+    max-width: 92vw;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  .modal-overlay.open .modal {
+    transform: scale(1) translateY(0);
+  }
+
+  .modal h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .modal-form { display: flex; flex-direction: column; gap: 12px; }
+
+  .modal-form input {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 11px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .modal-form input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+  }
+
+  .modal-form input::placeholder { color: var(--muted); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    padding: 11px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .btn-secondary {
+    padding: 11px 20px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    color: var(--muted2);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    background: var(--panel2);
+    border: 1px solid var(--border2);
+    border-left: 3px solid var(--accent3);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 0.8rem;
+    color: var(--text);
+    z-index: 2000;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { transform: translateX(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    main { padding: 24px 16px 48px; }
+    .sections-grid { grid-template-columns: 1fr; }
+    header { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    DevOps Workspace
+  </div>
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <div class="live-clock" id="clock">00:00:00</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="page-title">
+    <h1>Command Center</h1>
+    <p>All your tools &amp; services — one place</p>
+  </div>
+
+  <div class="sections-grid" id="sectionsGrid"></div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add New App</h3>
+    <div class="modal-form">
+      <input id="inputName" placeholder="App name (e.g. SonarQube)" />
+      <input id="inputUrl" placeholder="URL (e.g. https://sonar.company.com)" />
+      <input id="inputEmoji" placeholder="Emoji icon (e.g. 🔍)" maxlength="2" />
+      <input id="inputDesc" placeholder="Short description (optional)" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="modalSave">Add App</button>
+      <button class="btn-secondary" id="modalClose">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const SECTIONS = [
+  {
+    id: 'devtools',
+    title: 'Dev Tools',
+    subtitle: 'Development & Build',
+    icon: '🛠️',
+    color: '#38bdf8',
+    apps: [
+      { name: 'GitHub', desc: 'Source code repositories', emoji: '🐙', url: 'https://github.com' },
+      { name: 'Jenkins', desc: 'CI/CD automation server', emoji: '🤖', url: 'https://jenkins.io' },
+      { name: 'GitLab', desc: 'DevSecOps platform', emoji: '🦊', url: 'https://gitlab.com' },
+      { name: 'BitBucket', desc: 'Atlassian Git hosting', emoji: '🪣', url: 'https://bitbucket.org' },
+      { name: 'CircleCI', desc: 'Continuous integration', emoji: '⭕', url: 'https://circleci.com' },
+      { name: 'Docker Hub', desc: 'Container registry', emoji: '🐳', url: 'https://hub.docker.com' },
+    ]
+  },
+  {
+    id: 'knowledgedocs',
+    title: 'Knowledge & Docs',
+    subtitle: 'Documentation & Wikis',
+    icon: '📚',
+    color: '#818cf8',
+    apps: [
+      { name: 'Confluence', desc: 'Team knowledge base', emoji: '📄', url: 'https://confluence.atlassian.com' },
+      { name: 'Notion', desc: 'Notes and wikis', emoji: '📝', url: 'https://notion.so' },
+      { name: 'Google Drive', desc: 'Shared documents', emoji: '📁', url: 'https://drive.google.com' },
+      { name: 'Swagger UI', desc: 'API documentation', emoji: '📖', url: 'https://swagger.io' },
+      { name: 'ReadMe', desc: 'Developer hub', emoji: '📰', url: 'https://readme.com' },
+    ]
+  },
+  {
+    id: 'projectmgmt',
+    title: 'Project Management',
+    subtitle: 'Tracking & Planning',
+    icon: '📋',
+    color: '#34d399',
+    apps: [
+      { name: 'Jira', desc: 'Issue & sprint tracking', emoji: '🎯', url: 'https://jira.atlassian.com' },
+      { name: 'Trello', desc: 'Kanban boards', emoji: '🃏', url: 'https://trello.com' },
+      { name: 'Slack', desc: 'Team messaging', emoji: '💬', url: 'https://slack.com' },
+      { name: 'Teams', desc: 'Microsoft Teams', emoji: '🟪', url: 'https://teams.microsoft.com' },
+      { name: 'Asana', desc: 'Task management', emoji: '✅', url: 'https://asana.com' },
+    ]
+  },
+  {
+    id: 'mobiletesting',
+    title: 'Mobile Testing',
+    subtitle: 'Device Farms & Labs',
+    icon: '📱',
+    color: '#fb923c',
+    apps: [
+      { name: 'Sauce Labs', desc: 'Cross-browser & mobile testing', emoji: '🧪', url: 'https://saucelabs.com' },
+      { name: 'LambdaTest', desc: 'Real device cloud', emoji: '🔬', url: 'https://lambdatest.com' },
+      { name: 'BrowserStack', desc: 'App & browser testing', emoji: '🌐', url: 'https://browserstack.com' },
+      { name: 'Kobiton', desc: 'AI-powered mobile testing', emoji: '📲', url: 'https://kobiton.com' },
+      { name: 'Perfecto', desc: 'Continuous testing cloud', emoji: '💎', url: 'https://www.perfecto.io' },
+      { name: 'Firebase TestLab', desc: 'Google device testing', emoji: '🔥', url: 'https://firebase.google.com' },
+    ]
+  },
+  {
+    id: 'timesheet',
+    title: 'Timesheet & HR',
+    subtitle: 'Time Tracking & Payroll',
+    icon: '⏱️',
+    color: '#f472b6',
+    apps: [
+      { name: 'Workday', desc: 'HCM & time tracking', emoji: '🏢', url: 'https://workday.com' },
+      { name: 'Jira Tempo', desc: 'Tempo timesheets', emoji: '⏰', url: 'https://tempo.io' },
+      { name: 'Harvest', desc: 'Time & expense tracking', emoji: '🌾', url: 'https://getharvest.com' },
+      { name: 'Clockify', desc: 'Free time tracker', emoji: '🕐', url: 'https://clockify.me' },
+      { name: 'ADP', desc: 'Payroll & HR', emoji: '💼', url: 'https://adp.com' },
+    ]
+  },
+  {
+    id: 'repos',
+    title: 'Repositories',
+    subtitle: 'Code & Artifact Storage',
+    icon: '🗄️',
+    color: '#facc15',
+    apps: [
+      { name: 'Nexus Repository', desc: 'Artifact management', emoji: '📦', url: 'https://www.sonatype.com/products/nexus-repository' },
+      { name: 'JFrog Artifactory', desc: 'Universal artifact repo', emoji: '🏺', url: 'https://jfrog.com' },
+      { name: 'npm Registry', desc: 'Node package registry', emoji: '🟩', url: 'https://npmjs.com' },
+      { name: 'PyPI', desc: 'Python package index', emoji: '🐍', url: 'https://pypi.org' },
+      { name: 'Maven Central', desc: 'Java artifacts', emoji: '☕', url: 'https://search.maven.org' },
+    ]
+  },
+  {
+    id: 'automationreports',
+    title: 'Automation Reports',
+    subtitle: 'Test Results & Analytics',
+    icon: '📊',
+    color: '#a78bfa',
+    apps: [
+      { name: 'Allure Report', desc: 'Test report framework', emoji: '📈', url: 'https://allurereport.org' },
+      { name: 'TestRail', desc: 'Test case management', emoji: '🛤️', url: 'https://www.testrail.com' },
+      { name: 'Grafana', desc: 'Metrics dashboards', emoji: '📉', url: 'https://grafana.com' },
+      { name: 'SonarQube', desc: 'Code quality analysis', emoji: '🔍', url: 'https://sonarqube.org' },
+      { name: 'ReportPortal', desc: 'AI test analytics', emoji: '🤖', url: 'https://reportportal.io' },
+      { name: 'Kibana', desc: 'Log & analytics UI', emoji: '🦎', url: 'https://elastic.co/kibana' },
+    ]
+  },
+  {
+    id: 'cloud',
+    title: 'Cloud & Infra',
+    subtitle: 'Cloud Platforms & Ops',
+    icon: '☁️',
+    color: '#67e8f9',
+    apps: [
+      { name: 'AWS Console', desc: 'Amazon Web Services', emoji: '🟠', url: 'https://aws.amazon.com/console' },
+      { name: 'Azure Portal', desc: 'Microsoft Azure', emoji: '🔷', url: 'https://portal.azure.com' },
+      { name: 'GCP Console', desc: 'Google Cloud Platform', emoji: '🌈', url: 'https://console.cloud.google.com' },
+      { name: 'Kubernetes', desc: 'Container orchestration', emoji: '⛵', url: 'https://kubernetes.io' },
+      { name: 'Terraform Cloud', desc: 'Infrastructure as code', emoji: '🏗️', url: 'https://app.terraform.io' },
+    ]
+  },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let editingSectionId = null;
+
+// Load persisted apps from localStorage
+function loadSections() {
+  try {
+    const saved = localStorage.getItem('workspace_sections');
+    if (saved) {
+      const savedData = JSON.parse(saved);
+      savedData.forEach(saved => {
+        const sec = SECTIONS.find(s => s.id === saved.id);
+        if (sec) sec.apps = saved.apps;
+      });
+    }
+  } catch(e) {}
+}
+
+function saveSections() {
+  try {
+    localStorage.setItem('workspace_sections', JSON.stringify(
+      SECTIONS.map(s => ({ id: s.id, apps: s.apps }))
+    ));
+  } catch(e) {}
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────────
+function render() {
+  const grid = document.getElementById('sectionsGrid');
+  grid.innerHTML = '';
+  SECTIONS.forEach(section => {
+    grid.appendChild(buildCard(section));
+  });
+}
+
+function buildCard(section) {
+  const card = document.createElement('div');
+  card.className = 'section-card';
+  card.style.setProperty('--section-color', section.color);
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  header.innerHTML = `
+    <div class="section-icon">${section.icon}</div>
+    <div class="section-meta">
+      <h2>${section.title}</h2>
+      <span>${section.subtitle}</span>
+    </div>
+    <div class="item-count">${section.apps.length} apps</div>
+  `;
+  card.appendChild(header);
+
+  // Apps list
+  const list = document.createElement('div');
+  list.className = 'apps-list';
+  section.apps.forEach((app, idx) => {
+    list.appendChild(buildAppItem(app, section));
+  });
+
+  // Add button
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-item';
+  addBtn.innerHTML = `<span>＋</span> Add app`;
+  addBtn.onclick = () => openModal(section.id);
+  list.appendChild(addBtn);
+  card.appendChild(list);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'section-footer';
+  footer.innerHTML = `<span class="section-label">click to open</span>`;
+  const openAll = document.createElement('button');
+  openAll.className = 'open-all-btn';
+  openAll.textContent = 'Open all →';
+  openAll.onclick = () => {
+    section.apps.forEach(app => {
+      if (app.url && app.url !== '#') window.open(app.url, '_blank');
+    });
+  };
+  footer.appendChild(openAll);
+  card.appendChild(footer);
+
+  return card;
+}
+
+function buildAppItem(app, section) {
+  const item = document.createElement('a');
+  item.className = 'app-item';
+  item.href = app.url || '#';
+  item.target = '_blank';
+  item.rel = 'noopener noreferrer';
+  item.innerHTML = `
+    <div class="app-emoji">${app.emoji}</div>
+    <div class="app-info">
+      <div class="app-name">${app.name}</div>
+      ${app.desc ? `<div class="app-desc">${app.desc}</div>` : ''}
+    </div>
+    <div class="app-arrow">↗</div>
+    <button class="app-delete" title="Remove">✕</button>
+  `;
+  item.onclick = (e) => {
+    e.preventDefault();
+    const url = app.url;
+    if (!url || url === '#') {
+      showToast('⚠️ No URL configured for ' + app.name);
+      return;
+    }
+    window.open(url, '_blank');
+    showToast('🚀 Opening ' + app.name);
+  };
+
+  // Delete button — remove app from section
+  const delBtn = item.querySelector('.app-delete');
+  delBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const idx = section.apps.indexOf(app);
+    if (idx !== -1) {
+      section.apps.splice(idx, 1);
+      saveSections();
+      // animate out
+      item.style.overflow = 'hidden';
+      item.style.transition = 'opacity 0.22s, transform 0.22s, max-height 0.3s 0.15s, padding 0.3s 0.15s, margin 0.3s 0.15s';
+      item.style.maxHeight = item.offsetHeight + 'px';
+      requestAnimationFrame(() => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+          item.style.maxHeight = '0';
+          item.style.paddingTop = '0';
+          item.style.paddingBottom = '0';
+          item.style.marginTop = '0';
+          item.style.marginBottom = '0';
+          item.style.border = 'none';
+        }, 160);
+      });
+      setTimeout(() => {
+        item.remove();
+        const card = delBtn.closest('.section-card');
+        if (card) {
+          const countEl = card.querySelector('.item-count');
+          if (countEl) countEl.textContent = section.apps.length + ' apps';
+        }
+        showToast('🗑️ ' + app.name + ' removed');
+      }, 480);
+    }
+  };
+
+  return item;
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function openModal(sectionId) {
+  editingSectionId = sectionId;
+  document.getElementById('modalTitle').textContent = 'Add App to ' + SECTIONS.find(s=>s.id===sectionId)?.title;
+  document.getElementById('inputName').value = '';
+  document.getElementById('inputUrl').value = '';
+  document.getElementById('inputEmoji').value = '';
+  document.getElementById('inputDesc').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('inputName').focus();
+}
+
+document.getElementById('modalClose').onclick = () => {
+  document.getElementById('modalOverlay').classList.remove('open');
+};
+
+document.getElementById('modalOverlay').onclick = (e) => {
+  if (e.target === document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+};
+
+document.getElementById('modalSave').onclick = () => {
+  const name = document.getElementById('inputName').value.trim();
+  const url = document.getElementById('inputUrl').value.trim();
+  const emoji = document.getElementById('inputEmoji').value.trim() || '🔗';
+  const desc = document.getElementById('inputDesc').value.trim();
+
+  if (!name) { showToast('❗ App name is required'); return; }
+
+  const section = SECTIONS.find(s => s.id === editingSectionId);
+  if (section) {
+    section.apps.push({ name, url: url || '#', emoji, desc });
+    saveSections();
+    render();
+    document.getElementById('modalOverlay').classList.remove('open');
+    showToast('✅ ' + name + ' added!');
+  }
+};
+
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── CLOCK ──────────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.getElementById('modalOverlay').classList.remove('open');
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+loadSections();
+render();
+</script>
+</body>
+</html>

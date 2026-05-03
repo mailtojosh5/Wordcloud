@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Nebula Workspace | Animated Productivity Hub</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* modern gradient background with animated mesh effect */
+    body {
+      display: flex;
+      height: 100vh;
+      background: radial-gradient(circle at 20% 30%, rgba(2, 15, 30, 1) 0%, rgba(1, 8, 22, 1) 100%);
+      color: #f0f3fc;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* animated floating orbs */
+    body::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(circle at 15% 40%, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      animation: drift 80s linear infinite;
+    }
+
+    @keyframes drift {
+      0% { background-position: 0 0; }
+      100% { background-position: 200px 200px; }
+    }
+
+    /* animated background glow */
+    .glow-spot {
+      position: absolute;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%);
+      border-radius: 50%;
+      filter: blur(80px);
+      top: -20%;
+      right: -20%;
+      animation: subtleMove 18s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+
+    .glow-spot-two {
+      left: -30%;
+      bottom: -20%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+      animation: subtleMove 22s infinite alternate-reverse;
+    }
+
+    @keyframes subtleMove {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+      100% { transform: translate(5%, 5%) scale(1.1); opacity: 1; }
+    }
+
+    /* glass sidebar premium */
+    .sidebar {
+      width: 280px;
+      backdrop-filter: blur(18px);
+      background: rgba(15, 25, 45, 0.55);
+      border-right: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+      transition: all 0.3s;
+      box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 48px;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, #ffffff, #7dd3fc);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo span {
+      font-size: 32px;
+      filter: drop-shadow(0 0 6px #38bdf8);
+    }
+
+    .nav-btn {
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      font-weight: 500;
+      font-size: 1rem;
+      backdrop-filter: blur(4px);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .nav-btn i {
+      font-size: 1.35rem;
+      width: 28px;
+      transition: transform 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: rgba(56, 189, 248, 0.5);
+      transform: translateX(8px);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(95deg, rgba(56, 189, 248, 0.25), rgba(56, 189, 248, 0.05));
+      border-left: 3px solid #38bdf8;
+      border-color: #38bdf8;
+      box-shadow: 0 6px 14px rgba(56, 189, 248, 0.2);
+      color: white;
+    }
+
+    .nav-btn.active i {
+      transform: scale(1.05);
+      color: #7dd3fc;
+    }
+
+    /* Main area  */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 2;
+      position: relative;
+    }
+
+    /* custom scroll */
+    .main::-webkit-scrollbar {
+      width: 5px;
+    }
+    .main::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .main::-webkit-scrollbar-thumb {
+      background: #38bdf8;
+      border-radius: 10px;
+    }
+
+    header {
+      padding: 28px 32px 12px 32px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    #title {
+      font-size: 2.2rem;
+      font-weight: 600;
+      background: linear-gradient(120deg, #f0f9ff, #bae6fd);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+      display: inline-block;
+      position: relative;
+    }
+
+    #title::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 50%;
+      height: 3px;
+      background: linear-gradient(90deg, #38bdf8, transparent);
+      border-radius: 2px;
+    }
+
+    /* sections animation */
+    .section {
+      display: none;
+      padding: 28px 32px;
+      animation: fadeSlideUp 0.4s ease-out;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* modern add panel */
+    .add-box {
+      backdrop-filter: blur(16px);
+      background: rgba(20, 30, 55, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 28px;
+      padding: 8px 12px;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+    }
+
+    .add-box:hover {
+      border-color: #38bdf8;
+      box-shadow: 0 12px 32px -6px rgba(56, 189, 248, 0.2);
+    }
+
+    .add-box input, .add-box select {
+      flex: 1;
+      padding: 14px 18px;
+      background: rgba(2, 10, 22, 0.7);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #eef2ff;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .add-box input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+
+    .add-box button {
+      background: linear-gradient(100deg, #0ea5e9, #3b82f6);
+      border: none;
+      padding: 0 26px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .add-box button:hover {
+      transform: scale(0.97);
+      background: linear-gradient(100deg, #0284c7, #2563eb);
+      box-shadow: 0 6px 14px rgba(14, 165, 233, 0.4);
+    }
+
+    /* animated card grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: rgba(18, 28, 45, 0.65);
+      backdrop-filter: blur(12px);
+      padding: 22px 12px;
+      border-radius: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.2), transparent);
+      transition: left 0.5s;
+      pointer-events: none;
+    }
+
+    .card:hover::before {
+      left: 100%;
+    }
+
+    .card:hover {
+      transform: translateY(-10px) scale(1.02);
+      border-color: #38bdf8;
+      background: rgba(30, 45, 75, 0.85);
+      box-shadow: 0 22px 38px -12px rgba(56, 189, 248, 0.4);
+    }
+
+    .icon {
+      font-size: 2.5rem;
+      margin-bottom: 14px;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+
+    .card:hover .icon {
+      transform: scale(1.1) rotate(3deg);
+    }
+
+    .card div {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+      color: #f1f5f9;
+    }
+
+    .card small {
+      font-size: 0.7rem;
+      opacity: 0.65;
+      word-break: break-all;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* empty state animation */
+    .grid:empty::before {
+      content: "✨ Drag from the void? Add your first link ✨";
+      display: block;
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px;
+      color: #94a3b8;
+      font-style: italic;
+      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.2);
+      border-radius: 48px;
+    }
+
+    /* responsive */
+    @media (max-width: 680px) {
+      .sidebar {
+        width: 90px;
+        padding: 20px 10px;
+      }
+      .logo {
+        justify-content: center;
+      }
+      .logo span {
+        font-size: 28px;
+      }
+      .logo .logo-text {
+        display: none;
+      }
+      .nav-btn {
+        justify-content: center;
+        padding: 12px;
+      }
+      .nav-btn span:last-child {
+        display: none;
+      }
+      .nav-btn i {
+        margin: 0;
+        font-size: 24px;
+      }
+      .add-box {
+        flex-direction: column;
+      }
+      .main header {
+        padding: 20px;
+      }
+      .section {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="glow-spot"></div>
+<div class="glow-spot glow-spot-two"></div>
+
+<div class="sidebar">
+  <div class="logo">
+    <span>✨⚡</span>
+    <span class="logo-text">Nebula Hub</span>
+  </div>
+
+  <div class="nav-btn active" data-section="tools">
+    <i>🛠️</i> <span>Toolkit</span>
+  </div>
+  <div class="nav-btn" data-section="docs">
+    <i>📚</i> <span>Knowledge</span>
+  </div>
+  <div class="nav-btn" data-section="timesheet">
+    <i>⏱️</i> <span>Timescape</span>
+  </div>
+  <div class="nav-btn" data-section="reports">
+    <i>📊</i> <span>Insights</span>
+  </div>
+</div>
+
+<div class="main">
+  <header>
+    <div id="title">Toolkit</div>
+  </header>
+
+  <!-- TOOLS -->
+  <div id="tools" class="section active">
+    <div class="add-box">
+      <input id="tools-name" placeholder="✨ App name (e.g. Figma)" autocomplete="off">
+      <input id="tools-url" placeholder="🔗 https://...">
+      <button onclick="addApp('tools')">➕ Add Tool</button>
+    </div>
+    <div class="grid" id="tools-grid"></div>
+  </div>
+
+  <!-- DOCS -->
+  <div id="docs" class="section">
+    <div class="add-box">
+      <input id="docs-name" placeholder="📄 Doc name">
+      <input id="docs-url" placeholder="🔗 https://...">
+      <button onclick="addApp('docs')">📌 Add Doc</button>
+    </div>
+    <div class="grid" id="docs-grid"></div>
+  </div>
+
+  <!-- TIMESHEET -->
+  <div id="timesheet" class="section">
+    <div class="add-box">
+      <input id="timesheet-name" placeholder="⏳ Tool / Tracker">
+      <input id="timesheet-url" placeholder="🔗 https://...">
+      <button onclick="addApp('timesheet')">⏲️ Add Timesheet</button>
+    </div>
+    <div class="grid" id="timesheet-grid"></div>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="reports" class="section">
+    <div class="add-box">
+      <input id="reports-name" placeholder="📈 Report / Dashboard">
+      <input id="reports-url" placeholder="🔗 https://...">
+      <button onclick="addApp('reports')">📎 Add Report</button>
+    </div>
+    <div class="grid" id="reports-grid"></div>
+  </div>
+</div>
+
+<script>
+  // ENHANCED:  dynamic icons based on category, smooth persistence, modern animations
+  const sections = ["tools", "docs", "timesheet", "reports"];
+  
+  // give each card a unique icon fallback but with a little more flair
+  const defaultIcons = {
+    tools: ["⚙️", "🛠️", "🔧", "🧰", "🚀", "💻", "🎨", "📡"],
+    docs: ["📘", "📕", "📗", "📙", "📑", "📄", "📰", "📖"],
+    timesheet: ["⏱️", "⌛", "⏲️", "📅", "🗓️", "⏰", "🕒", "⚡"],
+    reports: ["📊", "📈", "📉", "📋", "🧾", "📑", "🗂️", "📐"]
+  };
+
+  function getRandomIcon(section, seed = 0) {
+    const list = defaultIcons[section] || ["✨"];
+    const idx = (seed + Math.floor(Math.random() * list.length)) % list.length;
+    return list[idx];
+  }
+
+  // storage utilities
+  function getData(section) {
+    const stored = localStorage.getItem(`nebula_${section}`);
+    if (stored) return JSON.parse(stored);
+    // preload with some beautiful example items
+    if (section === "tools") return [{ name: "GitHub Copilot", url: "https://github.com" }, { name: "Figma", url: "https://figma.com" }, { name: "Notion", url: "https://notion.so" }];
+    if (section === "docs") return [{ name: "MDN Web Docs", url: "https://developer.mozilla.org" }, { name: "Canva Docs", url: "https://canva.com" }];
+    if (section === "timesheet") return [{ name: "Toggl Track", url: "https://toggl.com" }, { name: "Harvest", url: "https://getharvest.com" }];
+    if (section === "reports") return [{ name: "Google Analytics", url: "https://analytics.google.com" }, { name: "Tableau Public", url: "https://public.tableau.com" }];
+    return [];
+  }
+
+  function saveData(section, data) {
+    localStorage.setItem(`nebula_${section}`, JSON.stringify(data));
+  }
+
+  // add new app
+  window.addApp = function(section) {
+    const nameInput = document.getElementById(`${section}-name`);
+    const urlInput = document.getElementById(`${section}-url`);
+    let name = nameInput.value.trim();
+    let url = urlInput.value.trim();
+
+    if (!name || !url) {
+      // subtle feedback animation
+      nameInput.style.borderColor = "#f87171";
+      urlInput.style.borderColor = "#f87171";
+      setTimeout(() => {
+        nameInput.style.borderColor = "";
+        urlInput.style.borderColor = "";
+      }, 800);
+      return;
+    }
+
+    const data = getData(section);
+    data.push({ name, url });
+    saveData(section, data);
+
+    nameInput.value = "";
+    urlInput.value = "";
+    loadApps(section);
+
+    // micro interaction
+    const btn = document.querySelector(`#${section} .add-box button`);
+    btn.style.transform = "scale(0.96)";
+    setTimeout(() => { btn.style.transform = ""; }, 150);
+  };
+
+  // load cards with animation and per-item icons based on name hash
+  function loadApps(section) {
+    const grid = document.getElementById(`${section}-grid`);
+    if (!grid) return;
+    grid.innerHTML = "";
+    const data = getData(section);
+    
+    data.forEach((app, idx) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      
+      // generate a consistent pseudo icon based on name + section
+      let iconChar = "🚀";
+      const nameLower = (app.name || "").toLowerCase();
+      if (nameLower.includes("figma")) iconChar = "🎨";
+      else if (nameLower.includes("github")) iconChar = "🐙";
+      else if (nameLower.includes("notion")) iconChar = "📝";
+      else if (nameLower.includes("toggl")) iconChar = "⏱️";
+      else if (nameLower.includes("google")) iconChar = "📈";
+      else if (nameLower.includes("tableau")) iconChar = "📊";
+      else if (nameLower.includes("canva")) iconChar = "🖌️";
+      else if (nameLower.includes("mdn")) iconChar = "🌐";
+      else iconChar = getRandomIcon(section, idx + (app.name?.length || 0));
+      
+      card.innerHTML = `
+        <div class="icon">${iconChar}</div>
+        <div>${escapeHtml(app.name)}</div>
+        <small>${shortenUrl(app.url)}</small>
+      `;
+      card.onclick = (e) => {
+        e.stopPropagation();
+        let targetUrl = app.url;
+        if (!targetUrl.startsWith("http")) targetUrl = "https://" + targetUrl;
+        window.open(targetUrl, "_blank");
+      };
+      grid.appendChild(card);
+    });
+    
+    // if empty and no items, show friendly note (via CSS pseudo but we also handle manually)
+    if (data.length === 0) {
+      const emptyMsg = document.createElement("div");
+      emptyMsg.className = "empty-placeholder";
+      emptyMsg.style.cssText = "grid-column:1/-1; text-align:center; padding:48px; background:rgba(255,255,255,0.03); border-radius:48px; backdrop-filter:blur(8px);";
+      emptyMsg.innerText = "✨ No links yet — add your first shortcut above ✨";
+      grid.appendChild(emptyMsg);
+    }
+  }
+  
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === "&") return "&amp;";
+      if (m === "<") return "&lt;";
+      if (m === ">") return "&gt;";
+      return m;
+    });
+  }
+  
+  function shortenUrl(url) {
+    try {
+      let u = url.replace(/^https?:\/\//, '');
+      if (u.length > 35) u = u.substring(0, 32) + '...';
+      return u;
+    } catch(e) { return url; }
+  }
+
+  // navigation system with smooth updates
+  let currentActive = "tools";
+
+  function setActiveSection(sectionId) {
+    // update main sections visibility
+    sections.forEach(sec => {
+      const el = document.getElementById(sec);
+      if (el) {
+        if (sec === sectionId) {
+          el.classList.add("active");
+        } else {
+          el.classList.remove("active");
+        }
+      }
+    });
+    
+    // update title text from active section name
+    let titleMap = {
+      tools: "Toolkit ⚡",
+      docs: "Knowledge Vault 📚",
+      timesheet: "Timescape ⏱️",
+      reports: "Insights Dashboard 📊"
+    };
+    document.getElementById("title").innerHTML = titleMap[sectionId] || sectionId;
+    
+    // update nav active styles
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.classList.remove("active");
+      const sectionAttr = btn.getAttribute("data-section");
+      if (sectionAttr === sectionId) {
+        btn.classList.add("active");
+      }
+    });
+    
+    currentActive = sectionId;
+    // refresh grid in case we want to re-render after storage changes elsewhere
+    loadApps(sectionId);
+  }
+  
+  // attach event listeners to nav buttons
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const section = btn.getAttribute("data-section");
+      if (section) {
+        setActiveSection(section);
+      }
+    });
+  });
+  
+  // initialization: load all sections data, apply default active
+  function initAll() {
+    for (let s of sections) {
+      loadApps(s);
+    }
+    // set active based on first active class but also storage sync
+    let firstActive = document.querySelector(".nav-btn.active")?.getAttribute("data-section") || "tools";
+    setActiveSection(firstActive);
+  }
+  
+  // listen for storage changes across tabs (optional)
+  window.addEventListener("storage", (e) => {
+    if (e.key && e.key.startsWith("nebula_")) {
+      const affectedSection = e.key.replace("nebula_", "");
+      if (sections.includes(affectedSection)) {
+        loadApps(affectedSection);
+        if (currentActive === affectedSection) loadApps(affectedSection);
+      }
+    }
+  });
+  
+  initAll();
+</script>
+</body>
+</html>

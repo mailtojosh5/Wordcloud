@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gatling Performance Studio</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.77.0/build/stlite.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3347;
+    --accent: #ff5722;
+    --accent2: #ffb300;
+    --green: #00e676;
+    --red: #ff1744;
+    --blue: #40c4ff;
+    --text: #e8eaf6;
+    --muted: #7986cb;
+    --font: 'Courier New', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+  }
+
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 0;
+  }
+
+  .panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    grid-row: 1 / 4;
+    overflow-y: auto;
+  }
+
+  .panel-header {
+    padding: 1rem 1.25rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .section {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .section input, .section select, .section textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  .section input:focus, .section select:focus, .section textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .section select option { background: var(--surface); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .slider-row input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .slider-val {
+    min-width: 36px;
+    text-align: right;
+    font-size: 13px;
+    color: var(--accent2);
+  }
+
+  .scenario-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    margin: 3px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+
+  .scenario-tag.active { border-color: var(--accent); color: var(--accent); }
+  .scenario-tag .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+  }
+  .scenario-tag.active .dot { background: var(--accent); }
+
+  .run-btn {
+    margin: 1rem 1.25rem;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity .15s, transform .1s;
+  }
+
+  .run-btn:hover { opacity: .9; }
+  .run-btn:active { transform: scale(.98); }
+  .run-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .content-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .metrics-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .metric-cell {
+    padding: .75rem 1rem;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .metric-cell:last-child { border-right: none; }
+
+  .metric-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .metric-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text);
+    transition: color .3s;
+  }
+
+  .metric-value.ok { color: var(--green); }
+  .metric-value.warn { color: var(--accent2); }
+  .metric-value.err { color: var(--red); }
+
+  .charts-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .chart-cell {
+    background: var(--bg);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chart-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: .5rem;
+    text-transform: uppercase;
+  }
+
+  .chart-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+
+  .log-area {
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    height: 130px;
+    overflow-y: auto;
+    padding: .5rem 1rem;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .log-line { display: flex; gap: 10px; }
+  .log-time { color: var(--muted); min-width: 70px; }
+  .log-ok { color: var(--green); }
+  .log-warn { color: var(--accent2); }
+  .log-err { color: var(--red); }
+  .log-info { color: var(--blue); }
+
+  .stlite-panel {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stlite-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .stlite-toggle { color: var(--accent); font-size: 13px; }
+  .stlite-body { height: 0; overflow: hidden; transition: height .3s ease; }
+  .stlite-body.open { height: 600px; }
+
+  #stlite-mount {
+    width: 100%;
+    height: 100%;
+    border: none;
+    overflow-y: auto;
+  }
+
+  .progress-ring {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: .75rem 1.25rem;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width .5s linear;
+  }
+
+  .progress-pct {
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .status-dot.running {
+    background: var(--green);
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: .3; }
+  }
+
+  .percentile-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .percentile-row:last-child { border-bottom: none; }
+  .percentile-key { color: var(--muted); }
+  .percentile-val { color: var(--text); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .panel { grid-row: auto; border-right: none; border-bottom: 1px solid var(--border); max-height: 400px; }
+    .metrics-bar { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 200px); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">G</div>
+    GATLING STUDIO
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge">stlite PYTHON ENGINE</span>
+    <span class="badge">BROWSER-NATIVE</span>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT PANEL: Config -->
+  <aside class="panel">
+    <div class="panel-header">Simulation Config</div>
+
+    <div class="section">
+      <label>Target URL</label>
+      <input type="text" id="url" value="https://jsonplaceholder.typicode.com/posts" />
+    </div>
+
+    <div class="section">
+      <label>HTTP Method</label>
+      <select id="method">
+        <option>GET</option>
+        <option>POST</option>
+        <option>PUT</option>
+        <option>PATCH</option>
+        <option>DELETE</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label>Request Body (for POST/PUT)</label>
+      <textarea id="body" rows="3" placeholder='{"key": "value"}'></textarea>
+    </div>
+
+    <div class="section">
+      <label>Custom Headers (JSON)</label>
+      <textarea id="headers" rows="2" placeholder='{"Authorization": "Bearer token"}'></textarea>
+    </div>
+
+    <div class="section">
+      <label>Load Profile</label>
+      <select id="profile" onchange="updateProfile()">
+        <option value="ramp">Ramp-Up (atOnceUsers → target)</option>
+        <option value="constant">Constant Load</option>
+        <option value="spike">Spike Test</option>
+        <option value="stress">Stress Test (step-up)</option>
+        <option value="soak">Soak / Endurance</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label>Virtual Users (peak)</label>
+      <div class="slider-row">
+        <input type="range" id="vus" min="1" max="50" value="10" oninput="document.getElementById('vus-val').textContent=this.value" />
+        <span class="slider-val" id="vus-val">10</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Duration (seconds)</label>
+      <div class="slider-row">
+        <input type="range" id="duration" min="5" max="120" value="30" oninput="document.getElementById('dur-val').textContent=this.value+'s'" />
+        <span class="slider-val" id="dur-val">30s</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Ramp-Up Time (seconds)</label>
+      <div class="slider-row">
+        <input type="range" id="ramp" min="0" max="60" value="10" oninput="document.getElementById('ramp-val').textContent=this.value+'s'" />
+        <span class="slider-val" id="ramp-val">10s</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>SLA: Max Acceptable Latency (ms)</label>
+      <div class="slider-row">
+        <input type="range" id="sla" min="100" max="5000" step="100" value="1000" oninput="document.getElementById('sla-val').textContent=this.value+'ms'" />
+        <span class="slider-val" id="sla-val">1000ms</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Scenarios</label>
+      <div id="scenarios">
+        <span class="scenario-tag active" data-s="browse"><span class="dot"></span>Browse</span>
+        <span class="scenario-tag" data-s="create"><span class="dot"></span>Create</span>
+        <span class="scenario-tag" data-s="search"><span class="dot"></span>Search</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Think Time (ms)</label>
+      <div class="row2">
+        <div><label style="font-size:10px;">Min</label><input type="number" id="thinkMin" value="0" min="0" /></div>
+        <div><label style="font-size:10px;">Max</label><input type="number" id="thinkMax" value="500" min="0" /></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Response Check</label>
+      <select id="checkType">
+        <option value="status">Status Code</option>
+        <option value="body">Body Contains</option>
+        <option value="both">Both</option>
+      </select>
+      <div style="margin-top:8px;" class="row2">
+        <div><label style="font-size:10px;">Expected Status</label><input type="number" id="expStatus" value="200" /></div>
+        <div><label style="font-size:10px;">Body Keyword</label><input type="text" id="expBody" value="" /></div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="runBtn" onclick="startTest()">&#9654; EXECUTE SIMULATION</button>
+    <button class="run-btn" id="stopBtn" onclick="stopTest()" disabled style="background:var(--surface2);color:var(--muted);">&#9632; STOP</button>
+  </aside>
+
+  <!-- RIGHT: Metrics + Charts + Log -->
+  <div class="content-area">
+
+    <div class="progress-ring">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText" style="font-size:12px;color:var(--muted);min-width:140px;">IDLE</span>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+
+    <div class="metrics-bar">
+      <div class="metric-cell">
+        <span class="metric-label">Requests/s</span>
+        <span class="metric-value" id="m-rps">0</span>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Mean Latency</span>
+        <span class="metric-value" id="m-mean">0ms</span>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">p95 Latency</span>
+        <span class="metric-value" id="m-p95">0ms</span>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">p99 Latency</span>
+        <span class="metric-value" id="m-p99">0ms</span>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Success Rate</span>
+        <span class="metric-value" id="m-sr">—</span>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Total Requests</span>
+        <span class="metric-value" id="m-total">0</span>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-cell">
+        <div class="chart-title">Response Time Over Time (ms)</div>
+        <div class="chart-wrap"><canvas id="chart-rt" role="img" aria-label="Response time over time">Response time chart</canvas></div>
+      </div>
+      <div class="chart-cell">
+        <div class="chart-title">Throughput (req/s) Over Time</div>
+        <div class="chart-wrap"><canvas id="chart-rps" role="img" aria-label="Throughput over time">Throughput chart</canvas></div>
+      </div>
+      <div class="chart-cell">
+        <div class="chart-title">Response Time Distribution (Histogram)</div>
+        <div class="chart-wrap"><canvas id="chart-hist" role="img" aria-label="Latency histogram">Histogram chart</canvas></div>
+      </div>
+      <div class="chart-cell">
+        <div class="chart-title">Active Virtual Users + Error Rate</div>
+        <div class="chart-wrap"><canvas id="chart-vu" role="img" aria-label="Virtual users and error rate">VU chart</canvas></div>
+      </div>
+    </div>
+
+    <div class="log-area" id="log"></div>
+  </div>
+</main>
+
+<!-- stlite Python Analysis Panel -->
+<div class="stlite-panel">
+  <div class="stlite-header" onclick="toggleStlite()">
+    <span>&#9881; PYTHON ANALYSIS ENGINE (stlite / Pyodide)</span>
+    <span class="stlite-toggle" id="stlite-toggle-icon">&#9660; OPEN</span>
+  </div>
+  <div class="stlite-body" id="stlite-body">
+    <div id="stlite-mount"></div>
+  </div>
+</div>
+
+<script>
+let testRunning = false;
+let testStop = false;
+let allResults = [];
+let charts = {};
+let rtData = [], rpsData = [], vuData = [], timeLabels = [];
+let intervalRef = null;
+let startTime = null;
+let stliteLoaded = false;
+let stliteOpen = false;
+
+document.querySelectorAll('.scenario-tag').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('active'));
+});
+
+function updateProfile() {
+  const p = document.getElementById('profile').value;
+  const rampSlider = document.querySelector('[id=ramp]').closest('.section');
+  rampSlider.style.opacity = (p === 'constant') ? '.4' : '1';
+}
+
+const CHART_OPTS = {
+  responsive: true, maintainAspectRatio: false, animation: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: '#7986cb', font: { size: 10, family: 'Courier New' }, maxTicksLimit: 10 }, grid: { color: '#2e3347' } },
+    y: { ticks: { color: '#7986cb', font: { size: 10, family: 'Courier New' } }, grid: { color: '#2e3347' } }
+  }
+};
+
+function mkChart(id, type, datasets, yLabel) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type, data: { labels: [], datasets },
+    options: { ...JSON.parse(JSON.stringify(CHART_OPTS)), scales: { ...JSON.parse(JSON.stringify(CHART_OPTS.scales)), y: { ...JSON.parse(JSON.stringify(CHART_OPTS.scales.y)), title: { display: !!yLabel, text: yLabel, color: '#7986cb', font: { size: 10 } } } } }
+  });
+}
+
+function initCharts() {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+  timeLabels = []; rtData = []; rpsData = []; vuData = [];
+
+  charts.rt = mkChart('chart-rt', 'line', [
+    { label: 'Mean', data: [], borderColor: '#40c4ff', backgroundColor: 'rgba(64,196,255,.1)', fill: true, tension: .3, pointRadius: 0, borderWidth: 1.5 },
+    { label: 'p95', data: [], borderColor: '#ff5722', borderDash: [4,2], fill: false, tension: .3, pointRadius: 0, borderWidth: 1 }
+  ]);
+
+  charts.rps = mkChart('chart-rps', 'line', [
+    { label: 'req/s', data: [], borderColor: '#00e676', backgroundColor: 'rgba(0,230,118,.08)', fill: true, tension: .3, pointRadius: 0, borderWidth: 1.5 }
+  ]);
+
+  charts.hist = mkChart('chart-hist', 'bar', [
+    { label: 'Count', data: [], backgroundColor: '#7986cb' }
+  ]);
+
+  charts.vu = mkChart('chart-vu', 'line', [
+    { label: 'VUs', data: [], borderColor: '#ffb300', fill: false, tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: 'y' },
+    { label: 'Errors %', data: [], borderColor: '#ff1744', fill: false, tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: 'y2', borderDash: [4,2] }
+  ]);
+
+  charts.vu.options.scales.y2 = {
+    position: 'right', ticks: { color: '#ff1744', font: { size: 10, family: 'Courier New' }, callback: v => v + '%' },
+    grid: { display: false }, max: 100, min: 0
+  };
+  charts.vu.update();
+}
+
+function log(msg, cls='log-info') {
+  const el = document.getElementById('log');
+  const now = new Date();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}.${String(now.getMilliseconds()).padStart(3,'0')}`;
+  el.innerHTML += `<div class="log-line"><span class="log-time">${ts}</span><span class="${cls}">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function percentile(arr, p) {
+  if (!arr.length) return 0;
+  const sorted = [...arr].sort((a,b) => a-b);
+  const idx = Math.ceil((p/100)*sorted.length) - 1;
+  return sorted[Math.max(0,idx)];
+}
+
+function updateMetrics(bucket, activeVUs) {
+  const latencies = bucket.map(r => r.latency);
+  const successes = bucket.filter(r => r.ok).length;
+  const sr = bucket.length ? (successes/bucket.length*100).toFixed(1) : 100;
+  const mean = latencies.length ? (latencies.reduce((a,b)=>a+b,0)/latencies.length).toFixed(0) : 0;
+  const p95 = percentile(latencies, 95).toFixed(0);
+  const p99 = percentile(latencies, 99).toFixed(0);
+  const sla = parseInt(document.getElementById('sla').value);
+
+  const elapsed = (Date.now() - startTime) / 1000;
+  const rps = (allResults.length / elapsed).toFixed(1);
+
+  document.getElementById('m-rps').textContent = rps;
+  document.getElementById('m-mean').textContent = mean + 'ms';
+  document.getElementById('m-p95').textContent = p95 + 'ms';
+  document.getElementById('m-p99').textContent = p99 + 'ms';
+  document.getElementById('m-total').textContent = allResults.length;
+
+  const srEl = document.getElementById('m-sr');
+  srEl.textContent = sr + '%';
+  srEl.className = 'metric-value ' + (sr >= 99 ? 'ok' : sr >= 90 ? 'warn' : 'err');
+
+  const p95El = document.getElementById('m-p95');
+  p95El.className = 'metric-value ' + (p95 <= sla ? 'ok' : p95 <= sla*1.5 ? 'warn' : 'err');
+
+  return { mean: parseFloat(mean), p95: parseFloat(p95), rps: parseFloat(rps), sr: parseFloat(sr), activeVUs };
+}
+
+function pushChartData(mean, p95, rps, sr, activeVUs, label) {
+  const MAX = 60;
+
+  charts.rt.data.labels.push(label);
+  charts.rt.data.datasets[0].data.push(mean);
+  charts.rt.data.datasets[1].data.push(p95);
+  if (charts.rt.data.labels.length > MAX) {
+    charts.rt.data.labels.shift();
+    charts.rt.data.datasets.forEach(d => d.data.shift());
+  }
+  charts.rt.update('none');
+
+  charts.rps.data.labels.push(label);
+  charts.rps.data.datasets[0].data.push(rps);
+  if (charts.rps.data.labels.length > MAX) {
+    charts.rps.data.labels.shift();
+    charts.rps.data.datasets[0].data.shift();
+  }
+  charts.rps.update('none');
+
+  charts.vu.data.labels.push(label);
+  charts.vu.data.datasets[0].data.push(activeVUs);
+  charts.vu.data.datasets[1].data.push((100 - sr).toFixed(1));
+  if (charts.vu.data.labels.length > MAX) {
+    charts.vu.data.labels.shift();
+    charts.vu.data.datasets.forEach(d => d.data.shift());
+  }
+  charts.vu.update('none');
+}
+
+function updateHistogram() {
+  const latencies = allResults.map(r => r.latency);
+  if (!latencies.length) return;
+  const buckets = [0,200,400,600,800,1000,1500,2000,3000,5000];
+  const labels = buckets.slice(0,-1).map((v,i) => `${v}-${buckets[i+1]}`);
+  const counts = new Array(buckets.length-1).fill(0);
+  latencies.forEach(l => {
+    for (let i = 0; i < buckets.length-1; i++) {
+      if (l >= buckets[i] && l < buckets[i+1]) { counts[i]++; break; }
+    }
+  });
+  charts.hist.data.labels = labels;
+  charts.hist.data.datasets[0].data = counts;
+  charts.hist.update('none');
+}
+
+async function makeRequest(url, method, body, headers, expStatus, checkBody, thinkMin, thinkMax) {
+  const think = Math.random() * (thinkMax - thinkMin) + thinkMin;
+  if (think > 0) await new Promise(r => setTimeout(r, think));
+
+  const t0 = performance.now();
+  let ok = false, status = 0, err = '';
+
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json', ...headers } };
+    if (body && ['POST','PUT','PATCH'].includes(method)) opts.body = body;
+
+    const res = await fetch(url, opts);
+    status = res.status;
+    const text = await res.text();
+    ok = (status === expStatus);
+    if (checkBody && checkBody.length > 0 && !text.includes(checkBody)) ok = false;
+    err = ok ? '' : `status=${status}`;
+  } catch(e) {
+    err = e.message.substring(0,40);
+  }
+
+  const latency = Math.round(performance.now() - t0);
+  return { latency, ok, status, err, ts: Date.now() };
+}
+
+async function startTest() {
+  if (testRunning) return;
+
+  const url = document.getElementById('url').value.trim();
+  if (!url) { log('ERROR: URL is required', 'log-err'); return; }
+
+  testRunning = true;
+  testStop = false;
+  allResults = [];
+  initCharts();
+
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('statusDot').classList.add('running');
+  document.getElementById('log').innerHTML = '';
+
+  const method = document.getElementById('method').value;
+  const body = document.getElementById('body').value;
+  const expStatus = parseInt(document.getElementById('expStatus').value) || 200;
+  const expBody = document.getElementById('expBody').value;
+  const thinkMin = parseInt(document.getElementById('thinkMin').value) || 0;
+  const thinkMax = parseInt(document.getElementById('thinkMax').value) || 500;
+  const peakVUs = parseInt(document.getElementById('vus').value);
+  const duration = parseInt(document.getElementById('duration').value) * 1000;
+  const rampTime = parseInt(document.getElementById('ramp').value) * 1000;
+  const profile = document.getElementById('profile').value;
+  const sla = parseInt(document.getElementById('sla').value);
+
+  let customHeaders = {};
+  try { customHeaders = JSON.parse(document.getElementById('headers').value || '{}'); } catch(e) {}
+
+  log(`Simulation START — Profile: ${profile.toUpperCase()}, Peak VUs: ${peakVUs}, Duration: ${duration/1000}s`, 'log-info');
+  log(`Target: ${method} ${url}`, 'log-info');
+
+  startTime = Date.now();
+  let ticker = 0;
+  let currentBucket = [];
+  let currentVUs = 0;
+
+  const getTargetVUs = (elapsed) => {
+    const frac = elapsed / duration;
+    if (profile === 'constant') return peakVUs;
+    if (profile === 'ramp') {
+      const rampFrac = rampTime > 0 ? Math.min(elapsed / rampTime, 1) : 1;
+      return Math.round(rampFrac * peakVUs);
+    }
+    if (profile === 'spike') {
+      if (frac < .2) return Math.round(peakVUs * (frac / .2));
+      if (frac < .4) return peakVUs;
+      if (frac < .5) return Math.round(peakVUs * (1 - (frac - .4) / .1));
+      if (frac < .6) return Math.round(peakVUs * .1);
+      if (frac < .8) return Math.round(peakVUs * ((frac - .6) / .2));
+      return peakVUs;
+    }
+    if (profile === 'stress') {
+      const step = Math.floor(frac * 5);
+      return Math.round((step+1)/5 * peakVUs);
+    }
+    if (profile === 'soak') {
+      if (frac < .1) return Math.round(frac / .1 * peakVUs);
+      if (frac > .9) return Math.round((1 - (frac-.9)/.1) * peakVUs);
+      return peakVUs;
+    }
+    return peakVUs;
+  };
+
+  let vuPool = [];
+  let vuResults = new Map();
+
+  const spawnVU = (id) => {
+    const run = async () => {
+      while (testRunning && !testStop) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed >= duration) break;
+        const target = getTargetVUs(elapsed);
+        if (id > target) { await new Promise(r => setTimeout(r, 200)); continue; }
+        const r = await makeRequest(url, method, body, customHeaders, expStatus, expBody, thinkMin, thinkMax);
+        r.vuId = id;
+        allResults.push(r);
+        currentBucket.push(r);
+      }
+    };
+    return run();
+  };
+
+  for (let i = 1; i <= peakVUs; i++) vuPool.push(spawnVU(i));
+
+  intervalRef = setInterval(() => {
+    ticker++;
+    const elapsed = Date.now() - startTime;
+    const pct = Math.min(100, (elapsed/duration*100)).toFixed(0);
+
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+
+    const targetVUs = getTargetVUs(elapsed);
+    document.getElementById('statusText').textContent = `RUNNING — VUs: ${targetVUs}/${peakVUs}`;
+
+    const bucket = [...currentBucket];
+    currentBucket = [];
+
+    const { mean, p95, rps, sr, activeVUs } = updateMetrics(bucket, targetVUs);
+    const label = `${(elapsed/1000).toFixed(0)}s`;
+    pushChartData(mean, p95, rps, sr, activeVUs, label);
+    if (ticker % 3 === 0) updateHistogram();
+
+    const failCount = bucket.filter(r => !r.ok).length;
+    if (failCount > 0) {
+      const errs = [...new Set(bucket.filter(r=>!r.ok).map(r=>r.err))].join(', ');
+      log(`${failCount} failures in last tick — ${errs}`, 'log-err');
+    }
+    if (p95 > sla) log(`SLA BREACH: p95 ${p95}ms > threshold ${sla}ms`, 'log-warn');
+    if (ticker % 5 === 0) log(`Tick ${ticker}: ${bucket.length} reqs, mean=${mean}ms, p95=${p95}ms, rps=${rps}`, 'log-ok');
+
+    if (elapsed >= duration) { finishTest(); }
+  }, 1000);
+
+  Promise.all(vuPool).then(() => { if (testRunning) finishTest(); });
+}
+
+function stopTest() {
+  testStop = true;
+  log('Simulation STOPPED by user', 'log-warn');
+  finishTest();
+}
+
+function finishTest() {
+  if (!testRunning) return;
+  testRunning = false;
+  clearInterval(intervalRef);
+
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('statusDot').classList.remove('running');
+  document.getElementById('statusText').textContent = 'COMPLETE';
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressPct').textContent = '100%';
+
+  updateHistogram();
+
+  const latencies = allResults.map(r => r.latency);
+  const total = allResults.length;
+  const successes = allResults.filter(r=>r.ok).length;
+  const sr = total ? (successes/total*100).toFixed(2) : '0.00';
+  const mean = total ? (latencies.reduce((a,b)=>a+b,0)/total).toFixed(1) : 0;
+  const p50 = percentile(latencies,50);
+  const p75 = percentile(latencies,75);
+  const p95 = percentile(latencies,95);
+  const p99 = percentile(latencies,99);
+  const max = Math.max(...latencies,0);
+  const min = Math.min(...latencies,Infinity);
+  const elapsed = (Date.now()-startTime)/1000;
+  const rps = (total/elapsed).toFixed(2);
+
+  log(`=== SIMULATION COMPLETE ===`, 'log-info');
+  log(`Total: ${total} reqs | Success: ${sr}% | RPS: ${rps}`, 'log-ok');
+  log(`Latency — min:${min}ms mean:${mean}ms p50:${p50}ms p75:${p75}ms p95:${p95}ms p99:${p99}ms max:${max}ms`, 'log-ok');
+
+  if (stliteOpen && window.pyodideReady) {
+    pushToStlite(allResults);
+  }
+  window._lastResults = allResults;
+}
+
+function toggleStlite() {
+  const body = document.getElementById('stlite-body');
+  const icon = document.getElementById('stlite-toggle-icon');
+  stliteOpen = !stliteOpen;
+  body.classList.toggle('open', stliteOpen);
+  icon.textContent = stliteOpen ? '▲ CLOSE' : '▼ OPEN';
+  if (stliteOpen && !stliteLoaded) loadStlite();
+}
+
+function loadStlite() {
+  stliteLoaded = true;
+  window._analysisData = null;
+  window._analysisMeta = null;
+  log('Loading stlite Python engine...', 'log-info');
+
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/@stlite/mountable@0.77.0/build/stlite.js';
+  script.onload = () => {
+    const code = `import streamlit as st
+import json, statistics, math
+from js import window
+
+st.markdown("## Gatling Python Analysis Engine")
+
+raw_js  = getattr(window, '_analysisData', None)
+meta_js = getattr(window, '_analysisMeta', None)
+
+if raw_js is None:
+    st.info("No simulation data yet. Run a simulation and click **SEND TO PYTHON** to analyze results here.")
+    st.stop()
+
+try:
+    data = json.loads(str(raw_js))
+    meta = json.loads(str(meta_js)) if meta_js else {}
+except Exception as ex:
+    st.error(f"Failed to parse data: {ex}")
+    st.stop()
+
+latencies  = [r["latency"] for r in data if "latency" in r]
+ok_list    = [r.get("ok", True) for r in data]
+
+if not latencies:
+    st.warning("No latency data found.")
+    st.stop()
+
+total      = len(latencies)
+successes  = sum(ok_list)
+failures   = total - successes
+sr         = successes / total * 100
+lat_sorted = sorted(latencies)
+
+def pct(arr, p):
+    idx = math.ceil(p / 100 * len(arr)) - 1
+    return arr[max(0, idx)]
+
+mean_lat  = statistics.mean(latencies)
+med_lat   = statistics.median(latencies)
+stdev_lat = statistics.stdev(latencies) if len(latencies) > 1 else 0
+p50  = pct(lat_sorted, 50)
+p75  = pct(lat_sorted, 75)
+p90  = pct(lat_sorted, 90)
+p95  = pct(lat_sorted, 95)
+p99  = pct(lat_sorted, 99)
+p999 = pct(lat_sorted, 99.9)
+min_lat = min(latencies)
+max_lat = max(latencies)
+
+rps      = meta.get("rps", 0)
+duration = meta.get("duration", 0)
+peak_vus = meta.get("peakVUs", 0)
+profile  = meta.get("profile", "constant")
+url      = meta.get("url", "—")
+sla      = meta.get("sla", 1000)
+
+sla_ok = p95 <= sla
+sr_ok  = sr >= 99.0
+status_label = "PASSED" if (sla_ok and sr_ok) else "DEGRADED" if sr >= 90 else "FAILED"
+status_color = "#00e676" if (sla_ok and sr_ok) else "#ffb300" if sr >= 90 else "#ff1744"
+status_icon  = "PASS" if (sla_ok and sr_ok) else "WARN" if sr >= 90 else "FAIL"
+
+st.markdown(f"""
+<div style="background:#1a1d27;border:1px solid #2e3347;border-radius:8px;padding:1rem 1.5rem;margin-bottom:1rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <div>
+      <span style="font-size:20px;font-weight:bold;color:{status_color};">[{status_icon}] SLA STATUS: {status_label}</span><br/>
+      <span style="color:#7986cb;font-size:12px;">Profile: <b>{profile.upper()}</b> | Target: {url} | Peak VUs: {peak_vus} | Duration: {duration}s | SLA: {sla}ms</span>
+    </div>
+    <div style="text-align:right;">
+      <span style="font-size:28px;font-weight:bold;color:{('#00e676' if sr_ok else '#ff1744')};">{sr:.1f}%</span><br/>
+      <span style="color:#7986cb;font-size:11px;">SUCCESS RATE</span>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+c1,c2,c3,c4,c5,c6 = st.columns(6)
+c1.metric("Total Requests", f"{total:,}")
+c2.metric("Failures", f"{failures:,}", delta=f"-{failures}" if failures else None, delta_color="inverse")
+c3.metric("Avg Latency", f"{mean_lat:.0f}ms")
+c4.metric("p95 Latency", f"{p95}ms", delta="SLA OK" if sla_ok else f"BREACH +{p95-sla}ms", delta_color="normal" if sla_ok else "inverse")
+c5.metric("p99 Latency", f"{p99}ms")
+c6.metric("Throughput", f"{rps:.1f} rps")
+
+st.divider()
+
+col_a, col_b = st.columns(2)
+with col_a:
+    st.markdown("#### Latency Percentiles")
+    st.dataframe({
+        "Percentile": ["min","p50","p75","p90","p95","p99","p99.9","max"],
+        "Latency (ms)": [min_lat, p50, p75, p90, p95, p99, p999, max_lat],
+        "vs SLA": ["OK" if v <= sla else "BREACH" for v in [min_lat,p50,p75,p90,p95,p99,p999,max_lat]]
+    }, use_container_width=True, hide_index=True)
+
+with col_b:
+    st.markdown("#### Statistical Summary")
+    st.dataframe({
+        "Metric": ["Mean","Median","Std Dev","Min","Max","Range","CV (%)"],
+        "Value":  [f"{mean_lat:.1f}ms", f"{med_lat:.0f}ms", f"{stdev_lat:.1f}ms",
+                   f"{min_lat}ms", f"{max_lat}ms", f"{max_lat-min_lat}ms",
+                   f"{(stdev_lat/mean_lat*100):.1f}%" if mean_lat else "N/A"]
+    }, use_container_width=True, hide_index=True)
+
+st.divider()
+st.markdown("#### Latency Histogram")
+bucket_edges  = [0,100,200,300,400,500,750,1000,1500,2000,3000,5000,999999]
+bucket_labels = ["0-100","100-200","200-300","300-400","400-500","500-750","750-1k","1k-1.5k","1.5k-2k","2k-3k","3k-5k","5k+"]
+counts = [0]*len(bucket_labels)
+for l in latencies:
+    for i in range(len(bucket_edges)-1):
+        if bucket_edges[i] <= l < bucket_edges[i+1]:
+            counts[i] += 1; break
+st.bar_chart(dict(zip(bucket_labels, counts)))
+st.dataframe({
+    "Range (ms)": bucket_labels,
+    "Request Count": counts,
+    "% of Total": [f"{c/total*100:.1f}%" for c in counts]
+}, use_container_width=True, hide_index=True)
+
+st.divider()
+st.markdown("#### Error Analysis")
+errors = [r for r in data if not r.get("ok", True)]
+if errors:
+    err_msgs = {}
+    for e in errors:
+        k = e.get("err","unknown") or "unknown"
+        err_msgs[k] = err_msgs.get(k,0) + 1
+    st.dataframe({
+        "Error Type": list(err_msgs.keys()),
+        "Count": list(err_msgs.values()),
+        "% of Total": [f"{v/total*100:.2f}%" for v in err_msgs.values()]
+    }, use_container_width=True, hide_index=True)
+else:
+    st.success("No errors recorded during this simulation.")
+
+st.divider()
+st.markdown("#### Performance Recommendations")
+recs = []
+if p95 > sla:
+    recs.append(f"SLA Breach: p95 ({p95}ms) exceeds SLA threshold ({sla}ms). Consider caching, query optimisation, or horizontal scaling.")
+if sr < 99:
+    recs.append(f"High Error Rate: {100-sr:.1f}% of requests failed. Review server logs and check for rate-limiting or connection limits.")
+if stdev_lat > mean_lat * 0.5:
+    recs.append(f"High Latency Variance: StdDev={stdev_lat:.0f}ms is >50% of mean. Indicates inconsistent performance — check GC pauses or DB lock contention.")
+if max_lat > p99 * 3:
+    recs.append(f"Outlier Spikes: Max latency ({max_lat}ms) is 3x p99 ({p99}ms). Investigate thread starvation or external dependency timeouts.")
+if p99 > sla * 2:
+    recs.append(f"p99 Critical: p99 ({p99}ms) is 2x SLA. Slowest 1% of requests may cause cascading timeouts upstream.")
+if not recs:
+    recs.append("All metrics within acceptable thresholds. System is performing well under the tested load.")
+for r in recs:
+    st.info(r)
+`;
+    window._stlitePyCode = code;
+    stlite.mount(document.getElementById('stlite-mount'), {
+      requirements: [],
+      entrypoint: 'app.py',
+      files: { 'app.py': code }
+    });
+    window._stliteMounted = true;
+    log('stlite Python engine ready', 'log-ok');
+    if (window._lastResults && window._lastResults.length) {
+      setTimeout(() => pushToStlite(window._lastResults), 2000);
+    }
+  };
+  document.head.appendChild(script);
+}
+
+function pushToStlite(results) {
+  if (!results || !results.length) return;
+  const elapsed = startTime ? (Date.now() - startTime) / 1000 : 1;
+  const meta = {
+    rps:      parseFloat((results.length / elapsed).toFixed(2)),
+    duration: parseInt(document.getElementById('duration').value),
+    peakVUs:  parseInt(document.getElementById('vus').value),
+    profile:  document.getElementById('profile').value,
+    url:      document.getElementById('url').value,
+    sla:      parseInt(document.getElementById('sla').value)
+  };
+  window._analysisData = JSON.stringify(results.slice(0, 2000));
+  window._analysisMeta = JSON.stringify(meta);
+  log(`Pushed ${Math.min(results.length,2000)} results to Python engine — click REFRESH ANALYSIS if panel does not update`, 'log-ok');
+}
+</script>
+
+<!-- Floating action buttons -->
+<div style="position:fixed;bottom:20px;right:20px;z-index:100;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+  <button onclick="openAndSendStlite()" style="background:var(--accent);color:#fff;border:none;padding:10px 18px;border-radius:4px;font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:1px;cursor:pointer;box-shadow:0 2px 12px rgba(255,87,34,.4);">
+    &#9166; SEND TO PYTHON
+  </button>
+  <button id="refreshBtn" onclick="refreshAnalysis()" style="display:none;background:var(--surface2);color:var(--accent2);border:1px solid var(--accent2);padding:8px 16px;border-radius:4px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;">
+    &#8635; REFRESH ANALYSIS
+  </button>
+</div>
+
+<script>
+function openAndSendStlite() {
+  const results = window._lastResults || [];
+  if (!results.length) {
+    log('No results yet — run a simulation first', 'log-warn');
+    return;
+  }
+  pushToStlite(results);
+  if (!stliteOpen) toggleStlite();
+  // remount after stlite has loaded (or immediately if already loaded)
+  const delay = window._stliteMounted ? 300 : 5000;
+  setTimeout(() => {
+    remountStlite();
+    document.getElementById('refreshBtn').style.display = 'block';
+  }, delay);
+}
+
+function refreshAnalysis() {
+  const results = window._lastResults || [];
+  if (!results.length) { log('No results to refresh', 'log-warn'); return; }
+  pushToStlite(results);
+  setTimeout(remountStlite, 300);
+}
+
+function remountStlite() {
+  const code = window._stlitePyCode;
+  if (!code) { log('stlite not loaded yet — please wait', 'log-warn'); return; }
+  const mount = document.getElementById('stlite-mount');
+  mount.innerHTML = '';
+  stlite.mount(mount, {
+    requirements: [],
+    entrypoint: 'app.py',
+    files: { 'app.py': code }
+  });
+  log('Python analysis panel refreshed with latest results', 'log-ok');
+}
+</script>
+</body>
+</html>

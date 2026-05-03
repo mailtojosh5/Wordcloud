@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WebTestLab — Browser Test Runner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#090b0f;--surface:#0f1117;--surface2:#161922;--border:#1e2530;
+  --accent:#00e5ff;--accent2:#7c5cfc;--green:#00ffaa;--warn:#ffb300;--red:#ff4560;
+  --text:#dde3ee;--muted:#4a5568;--font:'JetBrains Mono',monospace;--display:'Syne',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;font-size:13px}
+
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;height:48px;background:var(--surface);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;z-index:200}
+.logo{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:-1px;color:var(--accent)}
+.logo b{color:var(--accent2)}
+.pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;
+  border:1px solid var(--border);color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.hdr-space{flex:1}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.dot-label{font-size:11px;color:var(--muted)}
+
+/* LAYOUT */
+#wrap{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 48px);margin-top:48px}
+
+/* SIDEBAR */
+#sb{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#sb-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-tab{flex:1;padding:9px 4px;text-align:center;font-size:10px;font-weight:700;
+  letter-spacing:.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .15s;text-transform:uppercase;user-select:none}
+.sb-tab:hover{color:var(--text)}
+.sb-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+#sb-body{flex:1;overflow-y:auto;padding:12px}
+.sb-panel{display:none}.sb-panel.on{display:block}
+
+/* Form elements */
+.sec{margin-bottom:14px}
+.sec-title{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.row{display:flex;gap:6px;margin-bottom:7px;align-items:center}
+.row label{font-size:11px;color:var(--muted);min-width:64px;flex-shrink:0}
+input[type=text],input[type=url],input[type=number],textarea,select{
+  flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  border-radius:4px;padding:5px 8px;font-family:var(--font);font-size:11px;outline:none;
+  transition:border-color .15s;width:100%}
+input[type=text]:focus,input[type=url]:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;line-height:1.6}
+select{cursor:pointer}
+option{background:var(--surface)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  border:1px solid var(--border);background:none;color:var(--muted);
+  border-radius:4px;padding:5px 10px;font-family:var(--font);font-size:11px;
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--text);color:var(--text)}
+.btn.full{width:100%;margin-bottom:5px}
+.btn.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.btn.primary:hover{opacity:.85}
+.btn.purple{background:var(--accent2);color:#fff;border-color:var(--accent2);font-weight:700}
+.btn.purple:hover{opacity:.85}
+.btn.green{background:var(--green);color:#000;border-color:var(--green);font-weight:700}
+.btn.green:hover{opacity:.85}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:var(--red);color:#fff}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px}
+
+/* Radio group */
+.rg{display:flex;gap:4px;margin-bottom:7px}
+.rg label{flex:1;text-align:center;padding:4px 6px;border:1px solid var(--border);
+  border-radius:4px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s}
+.rg input{display:none}
+.rg input:checked+label{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08)}
+
+/* Tags */
+.tag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;text-transform:uppercase}
+.tag-info{background:rgba(0,229,255,.12);color:var(--accent)}
+.tag-pass{background:rgba(0,255,170,.12);color:var(--green)}
+.tag-fail{background:rgba(255,69,96,.12);color:var(--red)}
+.tag-warn{background:rgba(255,179,0,.12);color:var(--warn)}
+.tag-act{background:rgba(124,92,252,.15);color:var(--accent2)}
+
+/* MAIN */
+#main{display:flex;flex-direction:column;overflow:hidden}
+
+/* URL bar */
+#urlbar{display:flex;align-items:center;gap:6px;padding:7px 12px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:none;border:1px solid var(--border);color:var(--muted);
+  width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent)}
+#url-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  border-radius:5px;padding:5px 10px;font-family:var(--font);font-size:12px;outline:none;
+  transition:border-color .15s}
+#url-input:focus{border-color:var(--accent)}
+#go-btn{background:var(--accent);color:#000;border:none;border-radius:4px;
+  padding:5px 14px;font-family:var(--font);font-weight:700;font-size:12px;cursor:pointer}
+#go-btn:hover{opacity:.85}
+
+/* Tab strip */
+#main-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.mt{padding:7px 16px;font-size:11px;font-weight:600;letter-spacing:.4px;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.mt:hover{color:var(--text)}
+.mt.on{color:var(--accent);border-bottom-color:var(--accent)}
+.mt-badge{display:inline-block;background:var(--accent2);color:#fff;font-size:9px;
+  font-weight:700;padding:1px 5px;border-radius:10px;margin-left:4px;min-width:16px;text-align:center}
+
+/* Panes */
+#panes{flex:1;overflow:hidden;position:relative}
+.pane{position:absolute;inset:0;display:none;flex-direction:column}
+.pane.on{display:flex}
+
+/* Preview — now uses a real iframe writing srcdoc */
+#preview-wrap{flex:1;overflow:hidden;background:#fff;position:relative}
+#preview-frame{width:100%;height:100%;border:none;transition:all .2s}
+
+/* URL-open notice */
+#url-notice{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;background:var(--surface);color:var(--text);display:none}
+#url-notice h2{font-family:var(--display);font-size:20px;color:var(--accent)}
+#url-notice p{color:var(--muted);font-size:12px;text-align:center;max-width:340px;line-height:1.6}
+#url-notice .big-btn{padding:10px 28px;font-size:14px}
+
+/* HTML editor */
+#html-bar{display:flex;gap:6px;padding:8px 12px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+#html-editor{flex:1;background:#0c0e14;color:#e2e8f0;border:none;padding:14px;
+  font-family:var(--font);font-size:12.5px;line-height:1.75;resize:none;outline:none;tab-size:2}
+
+/* Fields */
+#fields-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+#fields-count{font-size:11px;color:var(--muted);flex:1}
+#fields-scroll{flex:1;overflow:auto}
+#fields-tbl{width:100%;border-collapse:collapse;font-size:12px}
+#fields-tbl th{background:var(--surface2);color:var(--muted);font-weight:600;
+  padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);
+  position:sticky;top:0;font-size:9px;letter-spacing:1px;text-transform:uppercase;z-index:1}
+#fields-tbl td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+#fields-tbl tr:hover td{background:rgba(255,255,255,.02)}
+.ftype{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;text-transform:uppercase}
+.ft-text{background:rgba(0,229,255,.1);color:var(--accent)}
+.ft-select{background:rgba(124,92,252,.12);color:var(--accent2)}
+.ft-textarea{background:rgba(255,179,0,.1);color:var(--warn)}
+.ft-button{background:rgba(0,255,170,.1);color:var(--green)}
+.ft-check{background:rgba(255,69,96,.1);color:var(--red)}
+.ft-radio{background:rgba(255,120,0,.1);color:#ff7800}
+.fa{background:none;border:1px solid var(--border);color:var(--muted);border-radius:3px;
+  padding:2px 7px;font-family:var(--font);font-size:10px;cursor:pointer;transition:all .12s;margin:1px}
+.fa:hover{border-color:var(--accent);color:var(--accent)}
+.fa.fill{border-color:var(--accent2);color:var(--accent2)}
+.fa.fill:hover{background:var(--accent2);color:#fff}
+.tval-input{background:#0c0e14;border:1px solid var(--border);color:var(--text);
+  padding:3px 7px;border-radius:3px;font-family:var(--font);font-size:11px;width:130px}
+
+/* Assertions */
+#assert-editor{flex:1;background:#0c0e14;color:#e2e8f0;border:none;padding:14px;
+  font-family:var(--font);font-size:12px;line-height:1.8;resize:none;outline:none}
+#assert-bar{display:flex;gap:6px;padding:8px 12px;background:var(--surface);
+  border-top:1px solid var(--border);flex-shrink:0}
+#assert-results{max-height:220px;overflow-y:auto;border-top:1px solid var(--border)}
+.ar{display:flex;gap:8px;align-items:center;padding:5px 12px;
+  border-bottom:1px solid rgba(255,255,255,.03);font-size:12px}
+.ar-icon{font-size:13px;flex-shrink:0}
+.ar-line{flex:1;color:var(--text);word-break:break-all}
+.ar-res{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.ar-res.pass{background:rgba(0,255,170,.12);color:var(--green)}
+.ar-res.fail{background:rgba(255,69,96,.12);color:var(--red)}
+.ar-detail{font-size:10px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Log */
+#log-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+#log-bar span{font-size:11px;color:var(--muted);flex:1}
+#log-scroll{flex:1;overflow-y:auto;padding:8px 12px}
+.le{display:flex;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.02);animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
+.le-time{color:var(--muted);font-size:10px;min-width:70px;padding-top:3px;flex-shrink:0}
+.le-msg{flex:1;font-size:12px;line-height:1.5;word-break:break-word}
+
+/* Report stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
+.stat-num{font-size:24px;font-weight:700;display:block;margin-bottom:2px}
+.stat-lbl{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+
+/* Info box */
+.info-box{background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.2);border-radius:6px;
+  padding:10px 12px;font-size:11px;line-height:1.6;color:var(--muted);margin-bottom:10px}
+.info-box strong{color:var(--accent)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="logo">Web<b>Test</b>Lab</div>
+  <div class="pill">v2.1</div>
+  <div class="pill">No Runtime Needed</div>
+  <div class="hdr-space"></div>
+  <div class="dot"></div>
+  <div class="dot-label">Ready</div>
+</div>
+
+<div id="wrap">
+
+  <!-- SIDEBAR -->
+  <div id="sb">
+    <div id="sb-tabs">
+      <div class="sb-tab on" onclick="sbTab('load')">Load</div>
+      <div class="sb-tab" onclick="sbTab('actions')">Actions</div>
+      <div class="sb-tab" onclick="sbTab('view')">View</div>
+      <div class="sb-tab" onclick="sbTab('report')">Report</div>
+    </div>
+    <div id="sb-body">
+
+      <!-- LOAD -->
+      <div class="sb-panel on" id="sb-load">
+        <div class="sec">
+          <div class="sec-title">Source</div>
+          <div class="rg">
+            <input type="radio" name="src" id="src-url" checked onchange="srcMode('url')">
+            <label for="src-url">🌐 URL</label>
+            <input type="radio" name="src" id="src-html" onchange="srcMode('html')">
+            <label for="src-html">📄 HTML</label>
+          </div>
+        </div>
+
+        <div class="sec" id="sec-url">
+          <div class="sec-title">Open URL</div>
+          <div class="info-box">
+            <strong>Note:</strong> Most websites (Google, etc.) block embedding due to security policies (<code>X-Frame-Options</code>). URLs open in a <strong>new tab</strong> for testing. Use <strong>HTML mode</strong> for interactive field/assertion testing here.
+          </div>
+          <input type="url" id="sb-url" placeholder="https://example.com" style="margin-bottom:6px" onkeydown="if(event.key==='Enter')sbOpenUrl()">
+          <button class="btn full primary" onclick="sbOpenUrl()">↗ Open in New Tab</button>
+          <button class="btn full" onclick="showUrlProxy()">⟳ Fetch & Render (Proxy)</button>
+        </div>
+
+        <div class="sec" id="sec-html" style="display:none">
+          <div class="sec-title">Paste HTML</div>
+          <textarea id="sb-html" rows="6" placeholder="<form>&#10;  <input name='email'>&#10;</form>"></textarea>
+          <button class="btn full primary" style="margin-top:6px" onclick="sbRenderHtml()">▶ Render HTML</button>
+        </div>
+
+        <div class="sec">
+          <div class="sec-title">Sample Pages</div>
+          <div class="btn-grid">
+            <button class="btn" onclick="loadSample('login')">Login</button>
+            <button class="btn" onclick="loadSample('form')">Contact</button>
+            <button class="btn" onclick="loadSample('checkout')">Checkout</button>
+            <button class="btn" onclick="loadSample('register')">Register</button>
+            <button class="btn" onclick="loadSample('search')">Search</button>
+            <button class="btn" onclick="loadSample('table')">Data Table</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="sb-panel" id="sb-actions">
+        <div class="sec">
+          <div class="sec-title">Field Operations</div>
+          <button class="btn full" onclick="scanFields()">⟳ Scan All Fields</button>
+          <button class="btn full purple" onclick="autoFillAll()">⚡ Auto-fill All Fields</button>
+          <button class="btn full" onclick="clearAllFields()">✕ Clear All Fields</button>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Fill Specific Field</div>
+          <div class="row"><label>Selector</label><input type="text" id="fill-sel" placeholder="#id or [name=x]"></div>
+          <div class="row"><label>Value</label><input type="text" id="fill-val" placeholder="test value"></div>
+          <button class="btn full" onclick="fillBySelector(gi('fill-sel'),gi('fill-val'))">Fill Field</button>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Click Element</div>
+          <div class="row"><label>Selector</label><input type="text" id="click-sel" placeholder="#btn"></div>
+          <button class="btn full" onclick="clickSelector(gi('click-sel'))">🖱 Click</button>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Scroll To Element</div>
+          <div class="row"><label>Selector</label><input type="text" id="scroll-sel" placeholder="#footer"></div>
+          <button class="btn full" onclick="scrollToEl()">↓ Scroll Into View</button>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Wait</div>
+          <div class="row"><label>Duration</label><input type="number" id="wait-ms" value="1000" min="100" max="15000" step="100"><span style="font-size:11px;color:var(--muted);margin-left:4px">ms</span></div>
+          <button class="btn full" onclick="doWait()">⏱ Wait</button>
+        </div>
+      </div>
+
+      <!-- VIEW -->
+      <div class="sb-panel" id="sb-view">
+        <div class="sec">
+          <div class="sec-title">Device Presets</div>
+          <div class="btn-grid">
+            <button class="btn" onclick="setVP(1280,720)">Desktop</button>
+            <button class="btn" onclick="setVP(1440,900)">Large</button>
+            <button class="btn" onclick="setVP(1024,768)">Laptop</button>
+            <button class="btn" onclick="setVP(768,1024)">Tablet</button>
+            <button class="btn" onclick="setVP(390,844)">iPhone 14</button>
+            <button class="btn" onclick="setVP(412,915)">Android</button>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Custom Size</div>
+          <div class="row"><label>Width px</label><input type="number" id="vp-w" value="1280" step="10"></div>
+          <div class="row"><label>Height px</label><input type="number" id="vp-h" value="720" step="10"></div>
+          <button class="btn full" onclick="setVP(+gi('vp-w'),+gi('vp-h'))">Apply Viewport</button>
+          <button class="btn full" onclick="resetVP()">Reset to Fill</button>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Zoom Level</div>
+          <div class="row"><label>Scale</label>
+            <select id="zoom-sel" onchange="setZoom(this.value)">
+              <option value="1">100%</option>
+              <option value="0.75">75%</option>
+              <option value="0.5">50%</option>
+              <option value="0.33">33%</option>
+              <option value="1.25">125%</option>
+              <option value="1.5">150%</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORT -->
+      <div class="sb-panel" id="sb-report">
+        <div class="sec">
+          <div class="sec-title">Summary</div>
+          <div class="stat-grid">
+            <div class="stat-box"><span class="stat-num" id="stat-pass" style="color:var(--green)">0</span><span class="stat-lbl">Passed</span></div>
+            <div class="stat-box"><span class="stat-num" id="stat-fail" style="color:var(--red)">0</span><span class="stat-lbl">Failed</span></div>
+            <div class="stat-box"><span class="stat-num" id="stat-actions" style="color:var(--accent)">0</span><span class="stat-lbl">Actions</span></div>
+            <div class="stat-box"><span class="stat-num" id="stat-fields" style="color:var(--warn)">0</span><span class="stat-lbl">Fields</span></div>
+          </div>
+          <div id="stat-time" style="font-size:10px;color:var(--muted)">No tests run</div>
+        </div>
+        <div class="sec">
+          <div class="sec-title">Export</div>
+          <button class="btn full" onclick="exportLog()">📄 Export Test Log (.txt)</button>
+          <button class="btn full" onclick="exportSelectors()">📋 Export Field Selectors</button>
+          <button class="btn full" onclick="exportPlaywright()">🎭 Playwright Script (.py)</button>
+          <button class="btn full" onclick="exportSelenium()">🔬 Selenium Script (.py)</button>
+        </div>
+        <div class="sec">
+          <button class="btn full danger" onclick="clearAll()">🗑 Clear All Data</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="urlbar">
+      <input id="url-input" type="text" placeholder="Enter URL → opens in new tab  |  Use HTML Editor tab for interactive testing"
+             onkeydown="if(event.key==='Enter')urlBarLoad()"/>
+      <button id="go-btn" onclick="urlBarLoad()">↗ OPEN</button>
+    </div>
+    <div id="main-tabs">
+      <div class="mt on" onclick="mainTab('preview')">Preview</div>
+      <div class="mt" onclick="mainTab('html')">HTML Editor</div>
+      <div class="mt" onclick="mainTab('fields')">Fields <span class="mt-badge" id="fields-badge">0</span></div>
+      <div class="mt" onclick="mainTab('assert')">Assertions</div>
+      <div class="mt" onclick="mainTab('log')">Log <span class="mt-badge" id="log-badge">0</span></div>
+    </div>
+    <div id="panes">
+
+      <!-- Preview -->
+      <div class="pane on" id="pane-preview">
+        <div id="preview-wrap">
+          <!-- srcdoc-based iframe: avoids X-Frame-Options entirely -->
+          <iframe id="preview-frame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals" srcdoc=""></iframe>
+
+          <!-- Shown when user tries to load an external URL -->
+          <div id="url-notice">
+            <h2>⚠ External URL</h2>
+            <p id="url-notice-msg">Most websites block iframe embedding via <code>X-Frame-Options</code> or <code>Content-Security-Policy</code>. The URL has been opened in a new browser tab for testing.</p>
+            <p style="color:var(--muted);font-size:11px">Use the <strong style="color:var(--accent)">HTML Editor</strong> tab to paste &amp; test HTML interactively, or use the sample pages in the sidebar.</p>
+            <button class="btn primary big-btn" id="url-notice-open" onclick="">↗ Open Again in New Tab</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HTML Editor -->
+      <div class="pane" id="pane-html">
+        <div id="html-bar">
+          <button class="btn primary" onclick="renderHtmlEditor()">▶ Render</button>
+          <button class="btn" onclick="loadSample('login')">Login</button>
+          <button class="btn" onclick="loadSample('form')">Contact</button>
+          <button class="btn" onclick="loadSample('checkout')">Checkout</button>
+          <button class="btn" onclick="loadSample('register')">Register</button>
+          <button class="btn" onclick="loadSample('search')">Search</button>
+          <button class="btn" onclick="loadSample('table')">Table</button>
+          <button class="btn" onclick="g('html-editor').value=''">Clear</button>
+          <button class="btn" onclick="scanFields();mainTab('fields')">→ Scan Fields</button>
+        </div>
+        <textarea id="html-editor" spellcheck="false" placeholder="Paste your HTML here and click ▶ Render…
+
+Or use the sample buttons above to load pre-built test pages."></textarea>
+      </div>
+
+      <!-- Fields -->
+      <div class="pane" id="pane-fields">
+        <div id="fields-bar">
+          <span id="fields-count">No fields scanned yet — click Scan</span>
+          <button class="btn" onclick="scanFields()">⟳ Scan</button>
+          <button class="btn purple" onclick="autoFillAll()">⚡ Fill All</button>
+          <button class="btn" onclick="clearAllFields()">✕ Clear</button>
+          <button class="btn" onclick="exportSelectors()">Export</button>
+        </div>
+        <div id="fields-scroll">
+          <table id="fields-tbl">
+            <thead>
+              <tr>
+                <th>#</th><th>Type</th><th>Name / ID</th>
+                <th>Placeholder</th><th>CSS Selector</th>
+                <th>Test Value</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fields-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Assertions -->
+      <div class="pane" id="pane-assert">
+        <textarea id="assert-editor" spellcheck="false" placeholder="// Write assertion rules — one per line
+// Syntax:  ASSERT &lt;selector&gt; &lt;CHECK&gt; [value]
+//
+// Checks:
+//   EXISTS          — element exists in DOM
+//   NOT_EXISTS      — element does not exist
+//   VISIBLE         — element is visible
+//   HIDDEN          — element is hidden/not displayed
+//   TEXT_CONTAINS   — text content contains value
+//   TEXT_EQUALS     — text content equals value
+//   VALUE_EQUALS    — input value equals value
+//   ATTR_EXISTS     — element has attribute (e.g. ATTR_EXISTS href)
+//   COUNT_GT N      — count of matches > N
+//   COUNT_EQ N      — count of matches = N
+//
+// Examples:
+// ASSERT h1 EXISTS
+// ASSERT .error NOT_EXISTS
+// ASSERT input[name=email] VISIBLE
+// ASSERT #title TEXT_CONTAINS Welcome
+// ASSERT input[name=user] VALUE_EQUALS admin
+// ASSERT form COUNT_GT 0
+// ASSERT a ATTR_EXISTS href
+"></textarea>
+        <div id="assert-bar">
+          <button class="btn green" onclick="runAssertions()">▶ Run Assertions</button>
+          <button class="btn" onclick="autoGenAssertions()">✦ Auto-generate</button>
+          <button class="btn" onclick="g('assert-results').innerHTML=''">Clear Results</button>
+        </div>
+        <div id="assert-results"></div>
+      </div>
+
+      <!-- Log -->
+      <div class="pane" id="pane-log">
+        <div id="log-bar">
+          <span>Test Execution Log</span>
+          <button class="btn" onclick="exportLog()">Export</button>
+          <button class="btn danger" onclick="clearLog()">Clear</button>
+        </div>
+        <div id="log-scroll"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── UTILS ── */
+const g = id => document.getElementById(id);
+const gi = id => g(id).value.trim();
+
+// The preview frame uses srcdoc so it always has same-origin access
+const iframe = g('preview-frame');
+const ifrDoc = () => { try { return iframe.contentDocument || iframe.contentWindow.document; } catch(e){ return null; } };
+
+let logEntries=[], scannedFields=[], totalPass=0, totalFail=0;
+let currentRenderedHtml = '';
+
+/* ── LOGGING ── */
+function log(msg, type='info') {
+  const t = new Date().toLocaleTimeString('en-GB');
+  logEntries.push({t,msg,type});
+  const tagClass = {pass:'tag-pass',fail:'tag-fail',action:'tag-act',warn:'tag-warn',info:'tag-info'}[type]||'tag-info';
+  const el = document.createElement('div');
+  el.className = 'le';
+  el.innerHTML = `<span class="le-time">${t}</span><span class="tag ${tagClass}">${type.toUpperCase()}</span><span class="le-msg">${msg}</span>`;
+  const s = g('log-scroll');
+  s.appendChild(el);
+  s.scrollTop = s.scrollHeight;
+  g('log-badge').textContent = logEntries.length;
+  updateStats();
+}
+
+/* ── TABS ── */
+function sbTab(name) {
+  const names = ['load','actions','view','report'];
+  document.querySelectorAll('.sb-tab').forEach((t,i) => t.classList.toggle('on', names[i]===name));
+  document.querySelectorAll('.sb-panel').forEach(p => p.classList.remove('on'));
+  g('sb-'+name).classList.add('on');
+}
+function mainTab(name) {
+  const names = ['preview','html','fields','assert','log'];
+  document.querySelectorAll('.mt').forEach((t,i) => t.classList.toggle('on', names[i]===name));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  g('pane-'+name).classList.add('on');
+}
+function srcMode(m) {
+  g('sec-url').style.display = m==='url'?'':'none';
+  g('sec-html').style.display = m==='html'?'':'none';
+}
+
+/* ── URL: Open in new tab (avoids iframe X-Frame-Options block) ── */
+function urlBarLoad() {
+  let url = gi('url-input');
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://'+url;
+  g('url-input').value = url;
+  openUrlExternal(url);
+}
+function sbOpenUrl() {
+  let url = gi('sb-url');
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://'+url;
+  openUrlExternal(url);
+}
+function openUrlExternal(url) {
+  // Show notice panel
+  const notice = g('url-notice');
+  notice.style.display = 'flex';
+  g('url-notice-open').onclick = () => window.open(url, '_blank');
+  // Auto-open
+  window.open(url, '_blank');
+  log(`Opened in new tab: ${url}`, 'action');
+  mainTab('preview');
+}
+
+function showUrlProxy() {
+  log('Direct proxy fetch not available in browser — use HTML Editor or open URL in new tab', 'warn');
+}
+
+function sbRenderHtml() { g('html-editor').value = gi('sb-html'); renderHtmlEditor(); }
+
+function reloadPreview() {
+  if (currentRenderedHtml) {
+    iframe.srcdoc = currentRenderedHtml;
+    log('Reloaded preview', 'info');
+  } else {
+    log('Nothing rendered yet', 'warn');
+  }
+}
+
+/* ── Render HTML via srcdoc (no iframe src = no X-Frame-Options issue) ── */
+function setRenderedHtml(html) {
+  currentRenderedHtml = html;
+  // Hide URL notice, show iframe
+  g('url-notice').style.display = 'none';
+  iframe.srcdoc = html;
+}
+
+/* ── HTML EDITOR ── */
+function renderHtmlEditor() {
+  const raw = g('html-editor').value.trim();
+  if (!raw) { log('Nothing to render', 'warn'); return; }
+  const html = raw.includes('<html') ? raw : `<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif;padding:28px;color:#111;line-height:1.6;background:#fff}
+  input,select,textarea{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;
+    font-size:14px;font-family:inherit;width:100%;margin-bottom:4px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  button{padding:9px 20px;background:#4f46e5;color:#fff;border:none;border-radius:6px;
+    cursor:pointer;font-size:14px;font-family:inherit}
+  button:hover{background:#4338ca}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;margin-top:14px;color:#374151}
+  .form-group{margin-bottom:16px}
+  h1,h2,h3{color:#111827;margin-bottom:20px}
+  fieldset{border:1px solid #e5e7eb;border-radius:10px;padding:18px;margin-bottom:18px}
+  legend{font-weight:700;font-size:14px;color:#4f46e5;padding:0 8px}
+</style></head><body>${raw}</body></html>`;
+  setRenderedHtml(html);
+  log('Rendered HTML', 'action');
+  mainTab('preview');
+}
+
+/* ── SAMPLES ── */
+const SAMPLES = {
+login:`<div style="max-width:400px;margin:40px auto;padding:36px;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+  <h2 style="text-align:center;margin-bottom:6px">Welcome back</h2>
+  <p style="text-align:center;color:#6b7280;font-size:13px;margin-bottom:24px">Sign in to your account</p>
+  <form id="loginForm">
+    <div class="form-group"><label for="username">Username or Email</label>
+      <input type="text" id="username" name="username" placeholder="Enter username" required></div>
+    <div class="form-group"><label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter password" required></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin:0">
+        <input type="checkbox" name="remember" style="width:auto;margin:0"> Remember me
+      </label>
+      <a href="#" style="font-size:12px;color:#4f46e5;text-decoration:none">Forgot password?</a>
+    </div>
+    <button type="submit" id="loginBtn" style="width:100%;padding:11px">Sign In</button>
+    <p style="text-align:center;margin-top:16px;font-size:13px;color:#6b7280">
+      No account? <a href="#" style="color:#4f46e5">Create one</a></p>
+  </form>
+</div>`,
+
+form:`<div style="max-width:560px;margin:30px auto">
+  <h2>Contact Us</h2>
+  <form id="contactForm">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="form-group"><label for="fname">First Name *</label><input type="text" id="fname" name="firstName" placeholder="John" required></div>
+      <div class="form-group"><label for="lname">Last Name *</label><input type="text" id="lname" name="lastName" placeholder="Doe" required></div>
+    </div>
+    <div class="form-group"><label for="email">Email *</label><input type="email" id="email" name="email" placeholder="john@example.com" required></div>
+    <div class="form-group"><label for="phone">Phone</label><input type="tel" id="phone" name="phone" placeholder="+1 555 0100"></div>
+    <div class="form-group"><label for="subject">Subject</label>
+      <select id="subject" name="subject"><option value="">-- Select topic --</option>
+        <option value="general">General Inquiry</option><option value="support">Technical Support</option>
+        <option value="billing">Billing</option><option value="other">Other</option></select></div>
+    <div class="form-group"><label for="message">Message *</label>
+      <textarea id="message" name="message" rows="5" placeholder="How can we help?" required></textarea></div>
+    <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:18px">
+      <input type="checkbox" name="newsletter" style="width:auto;margin:0"> Subscribe to newsletter</label>
+    <button type="submit" id="submitBtn">Send Message</button>
+  </form>
+</div>`,
+
+checkout:`<div style="max-width:600px;margin:30px auto">
+  <h2>Checkout</h2>
+  <form id="checkoutForm">
+    <fieldset><legend>Shipping Information</legend>
+      <div class="form-group"><label>Full Name</label><input type="text" name="fullName" placeholder="Jane Smith" required></div>
+      <div class="form-group"><label>Address Line 1</label><input type="text" name="address" placeholder="123 Main Street"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+        <div class="form-group"><label>City</label><input type="text" name="city" placeholder="New York"></div>
+        <div class="form-group"><label>State</label><input type="text" name="state" placeholder="NY"></div>
+        <div class="form-group"><label>ZIP</label><input type="text" name="zip" placeholder="10001"></div>
+      </div>
+      <div class="form-group"><label>Country</label>
+        <select name="country"><option>United States</option><option>Canada</option><option>United Kingdom</option></select></div>
+    </fieldset>
+    <fieldset><legend>Payment</legend>
+      <div class="form-group"><label>Card Number</label><input type="text" name="cardNumber" placeholder="4242 4242 4242 4242"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group"><label>Expiry</label><input type="text" name="expiry" placeholder="MM/YY"></div>
+        <div class="form-group"><label>CVV</label><input type="text" name="cvv" placeholder="123"></div>
+        <div class="form-group"><label>Card Name</label><input type="text" name="cardName" placeholder="J. Smith"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Shipping Method</legend>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:10px">
+        <input type="radio" name="shipping" value="standard" style="width:auto;margin:0" checked> Standard (Free, 5-7 days)</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+        <input type="radio" name="shipping" value="express" style="width:auto;margin:0"> Express ($9.99, 1-2 days)</label>
+    </fieldset>
+    <button type="submit" id="placeOrderBtn" style="width:100%;padding:13px;font-size:16px;margin-top:10px">Place Order →</button>
+  </form>
+</div>`,
+
+register:`<div style="max-width:480px;margin:30px auto;padding:36px;border:1px solid #e5e7eb;border-radius:14px">
+  <h2 style="text-align:center;margin-bottom:24px">Create Account</h2>
+  <form id="registerForm">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>First Name</label><input type="text" name="firstName" id="reg-fname" placeholder="John" required></div>
+      <div class="form-group"><label>Last Name</label><input type="text" name="lastName" id="reg-lname" placeholder="Doe" required></div>
+    </div>
+    <div class="form-group"><label>Email</label><input type="email" name="email" id="reg-email" placeholder="john@example.com" required></div>
+    <div class="form-group"><label>Username</label><input type="text" name="username" id="reg-username" placeholder="johndoe123" required></div>
+    <div class="form-group"><label>Password</label><input type="password" name="password" id="reg-password" placeholder="Min 8 characters" required></div>
+    <div class="form-group"><label>Confirm Password</label><input type="password" name="confirmPassword" id="reg-confirm" placeholder="Repeat password" required></div>
+    <div class="form-group"><label>Date of Birth</label><input type="date" name="dob" id="reg-dob"></div>
+    <div class="form-group"><label>Gender</label>
+      <select name="gender" id="reg-gender"><option value="">Prefer not to say</option>
+        <option value="m">Male</option><option value="f">Female</option><option value="nb">Non-binary</option></select></div>
+    <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:18px">
+      <input type="checkbox" name="terms" style="width:auto;margin:0" required> I agree to the <a href="#" style="color:#4f46e5">Terms of Service</a></label>
+    <button type="submit" id="registerBtn" style="width:100%;padding:11px">Create Account</button>
+  </form>
+</div>`,
+
+search:`<div style="max-width:640px;margin:40px auto">
+  <h2 style="text-align:center;margin-bottom:30px">Search</h2>
+  <form id="searchForm">
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <input type="search" id="search-query" name="q" placeholder="Search anything…" style="font-size:16px;padding:12px 16px">
+      <button type="submit" id="search-btn" style="padding:12px 24px;white-space:nowrap">Search</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="radio" name="type" value="all" style="width:auto;margin:0" checked> All</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="radio" name="type" value="images" style="width:auto;margin:0"> Images</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="radio" name="type" value="videos" style="width:auto;margin:0"> Videos</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="radio" name="type" value="news" style="width:auto;margin:0"> News</label>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group"><label style="font-size:12px">Date Range</label>
+        <select name="dateRange" id="date-range"><option>Any time</option><option>Past hour</option><option>Past 24h</option><option>Past week</option></select></div>
+      <div class="form-group"><label style="font-size:12px">Language</label>
+        <select name="lang" id="lang-filter"><option value="en">English</option><option value="es">Spanish</option><option value="fr">French</option></select></div>
+      <div class="form-group"><label style="font-size:12px">Safe Search</label>
+        <select name="safe" id="safe-search"><option value="moderate">Moderate</option><option value="strict">Strict</option><option value="off">Off</option></select></div>
+    </div>
+  </form>
+  <div id="results-placeholder" style="margin-top:30px;padding:20px;background:#f9fafb;border-radius:8px;text-align:center;color:#9ca3af;font-size:14px">
+    Search results will appear here</div>
+</div>`,
+
+table:`<div style="max-width:720px;margin:30px auto">
+  <h2 style="margin-bottom:16px">User Management</h2>
+  <div style="display:flex;gap:10px;margin-bottom:16px">
+    <input type="search" id="table-search" name="search" placeholder="Search users…" style="flex:1">
+    <select id="role-filter" name="role" style="width:auto">
+      <option value="">All roles</option><option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option></select>
+    <button id="add-user-btn" type="button">+ Add User</button>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px">
+    <thead><tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb">
+      <th style="padding:10px 12px;text-align:left;color:#374151">Name</th>
+      <th style="padding:10px 12px;text-align:left;color:#374151">Email</th>
+      <th style="padding:10px 12px;text-align:left;color:#374151">Role</th>
+      <th style="padding:10px 12px;text-align:left;color:#374151">Status</th>
+      <th style="padding:10px 12px;color:#374151">Actions</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:10px 12px;font-weight:500">Alice Johnson</td>
+        <td style="padding:10px 12px;color:#6b7280">alice@co.com</td>
+        <td style="padding:10px 12px"><span style="background:#ede9fe;color:#7c3aed;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600">Admin</span></td>
+        <td style="padding:10px 12px"><span style="background:#d1fae5;color:#065f46;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600">Active</span></td>
+        <td style="padding:10px 12px;text-align:center">
+          <button type="button" style="padding:4px 10px;font-size:12px;background:#f3f4f6;color:#111;margin:1px">Edit</button>
+          <button type="button" style="padding:4px 10px;font-size:12px;background:#fee2e2;color:#991b1b;border:none;margin:1px">Delete</button></td>
+      </tr>
+      <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa">
+        <td style="padding:10px 12px;font-weight:500">Bob Smith</td>
+        <td style="padding:10px 12px;color:#6b7280">bob@co.com</td>
+        <td style="padding:10px 12px"><span style="background:#dbeafe;color:#1e40af;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600">Editor</span></td>
+        <td style="padding:10px 12px"><span style="background:#d1fae5;color:#065f46;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600">Active</span></td>
+        <td style="padding:10px 12px;text-align:center">
+          <button type="button" style="padding:4px 10px;font-size:12px;background:#f3f4f6;color:#111;margin:1px">Edit</button>
+          <button type="button" style="padding:4px 10px;font-size:12px;background:#fee2e2;color:#991b1b;border:none;margin:1px">Delete</button></td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="padding:18px;background:#f9fafb;border-radius:10px;border:1px solid #e5e7eb">
+    <h3 style="margin-bottom:14px;font-size:15px">Add / Edit User</h3>
+    <form id="userForm">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Full Name</label><input type="text" name="name" id="user-name" placeholder="Full name"></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" id="user-email" placeholder="user@example.com"></div>
+        <div class="form-group"><label>Role</label><select name="role" id="user-role"><option>Admin</option><option>Editor</option><option>Viewer</option></select></div>
+        <div class="form-group"><label>Status</label><select name="status" id="user-status"><option>Active</option><option>Inactive</option></select></div>
+      </div>
+      <button type="submit" id="saveUserBtn" style="margin-top:8px">Save User</button>
+    </form>
+  </div>
+</div>`
+};
+
+function loadSample(k) {
+  g('html-editor').value = SAMPLES[k];
+  renderHtmlEditor();
+  log('Loaded sample: '+k, 'info');
+}
+
+/* ── FIELD SCANNER ── */
+const SMART = {
+  email:'test@example.com',password:'P@ssw0rd!',phone:'555-0100',tel:'555-0100',
+  number:'42',date:'2024-01-15',search:'test query',url:'https://example.com',
+  color:'#4f46e5',range:'50',firstname:'John',lastname:'Doe',fname:'John',lname:'Doe',
+  name:'John Doe',username:'testuser',user:'testuser',address:'123 Main St',
+  city:'New York',state:'NY',zip:'10001',postal:'10001',country:'United States',
+  cardnumber:'4242424242424242',card:'4242424242424242',cvv:'123',expiry:'12/25',
+  message:'This is an automated test message.',comment:'Automated test.',
+  subject:'Test Subject',title:'Test Title',query:'test query',q:'search term',
+};
+function smartVal(type, name) {
+  const k = (name||'').toLowerCase().replace(/[\s\-_]/g,'');
+  for (const [key, val] of Object.entries(SMART)) { if (k.includes(key)) return val; }
+  const def = {text:'Test Value',email:'test@example.com',password:'P@ssw0rd!',
+    tel:'555-0100',number:'42',date:'2024-01-15',search:'search query',
+    url:'https://example.com',textarea:'Automated test input.'};
+  return def[type] || 'Test Input';
+}
+
+function scanFields() {
+  const doc = ifrDoc();
+  if (!doc || !doc.body || doc.body.innerHTML.trim()==='') {
+    log('No rendered document — use HTML Editor to render HTML first', 'warn'); return;
+  }
+  const els = doc.querySelectorAll('input:not([type=hidden]), select, textarea, button');
+  scannedFields = [];
+  els.forEach((el, i) => {
+    const tag = el.tagName.toLowerCase();
+    const type = el.type || tag;
+    const name = el.name || '';
+    const id = el.id || '';
+    const ph = el.placeholder || '';
+    let sel = id ? '#'+id : name ? `${tag}[name="${name}"]` : `${tag}:nth-of-type(${i+1})`;
+    const testVal = (type==='button'||type==='submit') ? '' : smartVal(type, name||id||ph);
+    scannedFields.push({i, tag, type, name, id, ph, sel, testVal, el});
+  });
+  renderFieldsTable();
+  g('fields-badge').textContent = scannedFields.length;
+  g('fields-count').textContent = `${scannedFields.length} interactive fields found`;
+  g('stat-fields').textContent = scannedFields.length;
+  log(`Scanned ${scannedFields.length} fields`, 'info');
+}
+
+function renderFieldsTable() {
+  const tb = g('fields-tbody'); tb.innerHTML = '';
+  scannedFields.forEach((f, i) => {
+    const cls = {input:'ft-text',text:'ft-text',email:'ft-text',password:'ft-text',
+      tel:'ft-text',number:'ft-text',date:'ft-text',search:'ft-text',url:'ft-text',
+      color:'ft-text',range:'ft-text',select:'ft-select',textarea:'ft-textarea',
+      button:'ft-button',submit:'ft-button',checkbox:'ft-check',radio:'ft-radio'}[f.type]||'ft-text';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><span class="ftype ${cls}">${f.type}</span></td>
+      <td style="color:var(--accent)">${f.name||f.id||'<em style="color:var(--muted)">—</em>'}</td>
+      <td style="color:var(--muted);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${f.ph||'—'}</td>
+      <td style="color:var(--accent2);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;word-break:break-all">${f.sel}</td>
+      <td><input class="tval-input" value="${f.testVal||''}" onchange="scannedFields[${i}].testVal=this.value"></td>
+      <td>
+        <button class="fa fill" onclick="fillField(${i})">Fill</button>
+        <button class="fa" onclick="clearFld(${i})">Clear</button>
+        <button class="fa" onclick="focusFld(${i})">Focus</button>
+        <button class="fa" onclick="hlFld(${i})">Blink</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function fillField(i) {
+  const f = scannedFields[i];
+  try {
+    if (f.type==='checkbox'||f.type==='radio') { f.el.checked=true; }
+    else if (f.tag==='select') { if(f.el.options.length>1) f.el.selectedIndex=1; }
+    else if (f.type==='button'||f.type==='submit') { f.el.click(); log(`Clicked: ${f.sel}`,'action'); return; }
+    else { f.el.value=f.testVal; f.el.dispatchEvent(new Event('input',{bubbles:true})); f.el.dispatchEvent(new Event('change',{bubbles:true})); }
+    log(`Filled ${f.sel} = "${f.testVal}"`, 'pass'); totalPass++;
+  } catch(e) { log(`Fill failed ${f.sel}: ${e.message}`, 'fail'); totalFail++; }
+  updateStats();
+}
+function clearFld(i) { try { scannedFields[i].el.value=''; log(`Cleared ${scannedFields[i].sel}`,'info'); } catch(e){} }
+function focusFld(i) { try { scannedFields[i].el.focus(); mainTab('preview'); log(`Focused ${scannedFields[i].sel}`,'action'); } catch(e){} }
+function hlFld(i) {
+  try {
+    const el = scannedFields[i].el, orig = el.style.outline;
+    el.style.outline='3px solid #00e5ff'; el.style.outlineOffset='3px';
+    setTimeout(()=>{ el.style.outline=orig; el.style.outlineOffset=''; }, 2000);
+    mainTab('preview'); log(`Highlighted ${scannedFields[i].sel}`,'info');
+  } catch(e){}
+}
+function autoFillAll() {
+  if (scannedFields.length === 0) { log('Scan fields first','warn'); return; }
+  let n=0;
+  scannedFields.forEach((_,i)=>{ if(scannedFields[i].type!=='button'&&scannedFields[i].type!=='submit'){ fillField(i); n++; } });
+  log(`Auto-filled ${n} fields`, 'pass'); mainTab('preview');
+}
+function clearAllFields() { scannedFields.forEach((_,i)=>clearFld(i)); log('All fields cleared','info'); }
+
+/* ── DIRECT ACTIONS ── */
+function fillBySelector(sel, val) {
+  if (!sel) return;
+  const doc = ifrDoc(); if(!doc){log('No document','warn');return;}
+  try {
+    const el = doc.querySelector(sel);
+    if (!el){log(`Not found: ${sel}`,'fail');totalFail++;updateStats();return;}
+    if(el.type==='checkbox'||el.type==='radio') el.checked=true;
+    else { el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }
+    log(`Filled ${sel} = "${val}"`, 'pass'); totalPass++;
+  } catch(e){ log(`Error: ${e.message}`,'fail'); totalFail++; }
+  updateStats();
+}
+function clickSelector(sel) {
+  if (!sel) return;
+  const doc = ifrDoc(); if(!doc){log('No document','warn');return;}
+  try {
+    const el = doc.querySelector(sel);
+    if(!el){log(`Not found: ${sel}`,'fail');return;}
+    el.click(); log(`Clicked ${sel}`,'action');
+  } catch(e){ log(`Error: ${e.message}`,'fail'); }
+}
+function doWait() {
+  const ms = parseInt(g('wait-ms').value)||1000;
+  log(`Waiting ${ms}ms…`,'info');
+  setTimeout(()=>log(`Wait complete (${ms}ms)`,'pass'), ms);
+}
+function scrollToEl() {
+  const sel = gi('scroll-sel'); if(!sel) return;
+  const doc = ifrDoc(); if(!doc) return;
+  try {
+    const el = doc.querySelector(sel);
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); log(`Scrolled to ${sel}`,'action'); }
+    else log(`Not found: ${sel}`,'fail');
+  } catch(e){ log('Scroll error: '+e.message,'fail'); }
+}
+
+/* ── VIEWPORT ── */
+function setVP(w,h) {
+  const fr=g('preview-frame'), wr=g('preview-wrap');
+  fr.style.width=w+'px'; fr.style.height=h+'px';
+  const sc=Math.min(wr.offsetWidth/w, wr.offsetHeight/h, 1);
+  fr.style.transform=`scale(${sc})`; fr.style.transformOrigin='top left';
+  log(`Viewport ${w}×${h} (scale ${Math.round(sc*100)}%)`,'info');
+}
+function resetVP() {
+  const fr=g('preview-frame');
+  fr.style.width='100%'; fr.style.height='100%';
+  fr.style.transform='none';
+  log('Viewport reset','info');
+}
+function setZoom(sc) {
+  g('preview-frame').style.transform=`scale(${sc})`;
+  g('preview-frame').style.transformOrigin='top left';
+  log(`Zoom ${Math.round(sc*100)}%`,'info');
+}
+
+/* ── ASSERTIONS ── */
+function runAssertions() {
+  const lines = g('assert-editor').value.split('\n');
+  const results = [];
+  const doc = ifrDoc();
+  lines.forEach(raw => {
+    const line=raw.trim();
+    if(!line||line.startsWith('//')||line.startsWith('#')) return;
+    const parts=line.split(/\s+/);
+    if(parts[0].toUpperCase()!=='ASSERT'||parts.length<3) return;
+    const sel=parts[1], check=parts[2].toUpperCase(), val=parts.slice(3).join(' ');
+    let passed=false, detail='';
+    try {
+      if(!doc) throw new Error('no document rendered');
+      const els=doc.querySelectorAll(sel), el=els[0];
+      switch(check){
+        case 'EXISTS': passed=els.length>0; detail=`${els.length} found`; break;
+        case 'NOT_EXISTS': passed=els.length===0; detail=`${els.length} found`; break;
+        case 'VISIBLE': if(el){const cs=iframe.contentWindow.getComputedStyle(el);passed=cs.display!=='none'&&cs.visibility!=='hidden'&&el.offsetParent!==null;detail=passed?'visible':'hidden';}else detail='not found'; break;
+        case 'HIDDEN': if(el){const cs=iframe.contentWindow.getComputedStyle(el);passed=cs.display==='none'||cs.visibility==='hidden';detail=passed?'hidden':'visible';}else{passed=true;detail='not found';} break;
+        case 'TEXT_CONTAINS': passed=!!el&&el.textContent.includes(val); detail=el?`"${el.textContent.trim().slice(0,40)}"`:'not found'; break;
+        case 'TEXT_EQUALS': passed=!!el&&el.textContent.trim()===val; detail=el?`"${el.textContent.trim()}"`:'not found'; break;
+        case 'VALUE_EQUALS': passed=!!el&&el.value===val; detail=el?`value="${el.value}"`:'not found'; break;
+        case 'COUNT_GT': passed=els.length>parseInt(val); detail=`count=${els.length}`; break;
+        case 'COUNT_EQ': passed=els.length===parseInt(val); detail=`count=${els.length}`; break;
+        case 'ATTR_EXISTS': passed=!!el&&el.hasAttribute(val); detail=passed?`has [${val}]`:`missing [${val}]`; break;
+        default: detail='unknown check: '+check;
+      }
+    } catch(err){ detail=err.message; }
+    results.push({line,passed,detail});
+    if(passed) totalPass++; else totalFail++;
+    log(`ASSERT ${sel} ${check}${val?' '+val:''} → ${passed?'PASS':'FAIL'} — ${detail}`, passed?'pass':'fail');
+  });
+  g('assert-results').innerHTML = results.map(r=>`
+    <div class="ar">
+      <span class="ar-icon">${r.passed?'✅':'❌'}</span>
+      <span class="ar-line">${r.line}</span>
+      <span class="ar-res ${r.passed?'pass':'fail'}">${r.passed?'PASS':'FAIL'}</span>
+      <span class="ar-detail" title="${r.detail}">${r.detail}</span>
+    </div>`).join('');
+  const p=results.filter(r=>r.passed).length;
+  log(`Results: ${p}/${results.length} passed`, p===results.length?'pass':'fail');
+  updateStats();
+}
+function autoGenAssertions() {
+  const doc=ifrDoc(), lines=['// Auto-generated assertions'];
+  if(doc&&doc.body){
+    const t=doc.title; if(t) lines.push(`ASSERT title TEXT_CONTAINS ${t}`);
+    if(doc.querySelector('h1')) lines.push('ASSERT h1 EXISTS');
+    if(doc.querySelector('form')) lines.push('ASSERT form COUNT_GT 0');
+    doc.querySelectorAll('input[id],input[name]').forEach(el=>{
+      const s=el.id?'#'+el.id:`[name="${el.name}"]`;
+      lines.push(`ASSERT ${s} EXISTS`); lines.push(`ASSERT ${s} VISIBLE`);
+    });
+    const sub=doc.querySelector('button[type=submit],input[type=submit],button:not([type])');
+    if(sub){ const s=sub.id?'#'+sub.id:'button'; lines.push(`ASSERT ${s} EXISTS`); }
+  } else lines.push('// No HTML rendered — render HTML first');
+  g('assert-editor').value=lines.join('\n');
+  log('Auto-generated assertions','info');
+}
+
+/* ── EXPORTS ── */
+function dl(name, txt) {
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download=name; a.click();
+}
+function exportLog() {
+  dl('webtestlab-log.txt', logEntries.map(e=>`[${e.t}] [${e.type.toUpperCase()}] ${e.msg}`).join('\n'));
+  log('Exported log','info');
+}
+function exportSelectors() {
+  if(!scannedFields.length){log('Scan fields first','warn');return;}
+  dl('selectors.txt', ['# Field Selectors — WebTestLab',''].concat(
+    scannedFields.map(f=>`# ${f.type.toUpperCase()} | ${f.name||f.id||'unnamed'}\nselector: ${f.sel}\ntest_value: ${f.testVal}\n`)
+  ).join('\n'));
+  log('Exported selectors','info');
+}
+function exportPlaywright() {
+  const lines=['# Playwright (Python) — WebTestLab','from playwright.sync_api import sync_playwright','',
+    'def run(playwright):','    browser = playwright.chromium.launch(headless=False)',
+    '    page = browser.new_page()','    page.goto("YOUR_URL_HERE")',''];
+  scannedFields.forEach(f=>{
+    if(f.type==='checkbox'||f.type==='radio') lines.push(`    page.check('${f.sel}')`);
+    else if(f.tag==='select') lines.push(`    page.select_option('${f.sel}', index=1)`);
+    else if(f.type==='button'||f.type==='submit') lines.push(`    # page.click('${f.sel}')`);
+    else lines.push(`    page.fill('${f.sel}', '${f.testVal}')`);
+  });
+  lines.push('','    browser.close()','','with sync_playwright() as p:','    run(p)');
+  dl('test_playwright.py', lines.join('\n'));
+  log('Exported Playwright script','info');
+}
+function exportSelenium() {
+  const lines=['# Selenium (Python) — WebTestLab','from selenium import webdriver',
+    'from selenium.webdriver.common.by import By','from selenium.webdriver.support.ui import Select','',
+    'driver = webdriver.Chrome()','driver.get("YOUR_URL_HERE")',''];
+  scannedFields.forEach(f=>{
+    const by=f.sel.startsWith('#')?`By.ID, "${f.sel.slice(1)}"`:`By.CSS_SELECTOR, "${f.sel}"`;
+    if(f.tag==='select') lines.push(`Select(driver.find_element(${by})).select_by_index(1)`);
+    else if(f.type==='checkbox'||f.type==='radio') lines.push(`driver.find_element(${by}).click()`);
+    else if(f.type==='button'||f.type==='submit') lines.push(`# driver.find_element(${by}).click()`);
+    else lines.push(`driver.find_element(${by}).send_keys("${f.testVal}")`);
+  });
+  lines.push('','# driver.quit()');
+  dl('test_selenium.py', lines.join('\n'));
+  log('Exported Selenium script','info');
+}
+function clearLog() { logEntries=[]; totalPass=0; totalFail=0; g('log-scroll').innerHTML=''; g('log-badge').textContent='0'; updateStats(); }
+function clearAll() { clearLog(); scannedFields=[]; g('fields-tbody').innerHTML=''; g('fields-badge').textContent='0'; g('fields-count').textContent='No fields scanned'; }
+
+/* ── STATS ── */
+function updateStats() {
+  g('stat-pass').textContent=totalPass;
+  g('stat-fail').textContent=totalFail;
+  g('stat-actions').textContent=logEntries.length;
+  g('stat-fields').textContent=scannedFields.length;
+  g('stat-time').textContent='Last updated: '+new Date().toLocaleTimeString();
+}
+
+/* ── INIT ── */
+log('WebTestLab v2.1 ready','info');
+log('Tip: Use HTML Editor or sample pages for interactive field/assertion testing','info');
+log('URLs open in a new tab (external sites block iframe embedding by design)','warn');
+updateStats();
+</script>
+</body>
+</html>
